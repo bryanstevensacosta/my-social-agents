@@ -1,5 +1,4 @@
 import { DataSource, Repository } from 'typeorm';
-import { setupTestDatabase, teardownTestDatabase } from '@/../test/setup';
 import { IngestionJob } from '@/ingestion/job/domain/aggregates/ingestion-job';
 import { JobMetrics } from '@/ingestion/job/domain/value-objects';
 import { SourceConfiguration } from '@/ingestion/source/domain/aggregates/source-configuration';
@@ -15,6 +14,10 @@ import { TypeOrmIngestionJobWriteRepository } from '../ingestion-job-write';
 import { TypeOrmIngestionJobReadRepository } from '../ingestion-job-read';
 import { TypeOrmIngestionJobFactory } from '../../factories/ingestion-job-factory';
 import { IngestionJobEntity } from '../../entities/ingestion-job';
+import { config } from 'dotenv';
+
+// Load test environment variables
+config({ path: '.env.test' });
 
 /**
  * IngestionJob Repository Integration Tests
@@ -31,23 +34,50 @@ describe('IngestionJob Repository Integration', () => {
   let testSourceConfig: SourceConfiguration;
 
   beforeAll(async () => {
-    dataSource = await setupTestDatabase();
-    entityRepository = dataSource.getRepository(IngestionJobEntity);
-    writeRepo = new TypeOrmIngestionJobWriteRepository(entityRepository);
-    readRepo = new TypeOrmIngestionJobReadRepository(entityRepository);
-    factory = new TypeOrmIngestionJobFactory(readRepo);
+    try {
+      // Create DataSource with explicit entity
+      dataSource = new DataSource({
+        type: 'postgres',
+        host: process.env.DB_HOST ?? 'localhost',
+        port: parseInt(process.env.DB_PORT ?? '5432', 10),
+        username: process.env.DB_USERNAME ?? 'postgres',
+        password: process.env.DB_PASSWORD ?? 'postgres',
+        database: process.env.DB_DATABASE_TEST ?? 'crypto_knowledge_test',
+        entities: [IngestionJobEntity], // Explicit entity import
+        synchronize: true,
+        dropSchema: true,
+        logging: false,
+      });
 
-    // Create a test source configuration
-    testSourceConfig = SourceConfiguration.create({
-      sourceId: 'test-source-1',
-      sourceType: SourceType.fromEnum(SourceTypeEnum.RSS),
-      name: 'Test Source',
-      config: { feedUrl: 'https://test.com/rss' },
-    });
+      await dataSource.initialize();
+
+      entityRepository = dataSource.getRepository(IngestionJobEntity);
+
+      if (!entityRepository) {
+        throw new Error('Failed to get repository for IngestionJobEntity');
+      }
+
+      writeRepo = new TypeOrmIngestionJobWriteRepository(entityRepository);
+      readRepo = new TypeOrmIngestionJobReadRepository(entityRepository);
+      factory = new TypeOrmIngestionJobFactory(readRepo);
+
+      // Create a test source configuration
+      testSourceConfig = SourceConfiguration.create({
+        sourceId: 'test-source-1',
+        sourceType: SourceType.fromEnum(SourceTypeEnum.RSS),
+        name: 'Test Source',
+        config: { feedUrl: 'https://test.com/rss' },
+      });
+    } catch (error) {
+      console.error('Error in beforeAll:', error);
+      throw error;
+    }
   });
 
   afterAll(async () => {
-    await teardownTestDatabase(dataSource);
+    if (dataSource?.isInitialized) {
+      await dataSource.destroy();
+    }
   });
 
   afterEach(async () => {
@@ -209,9 +239,12 @@ describe('IngestionJob Repository Integration', () => {
       const running = await readRepo.findByStatus('RUNNING');
       const completed = await readRepo.findByStatus('COMPLETED');
 
-      expect(pending).toHaveLength(1);
-      expect(running).toHaveLength(1);
-      expect(completed).toHaveLength(1);
+      expect(pending.jobs).toHaveLength(1);
+      expect(pending.total).toBe(1);
+      expect(running.jobs).toHaveLength(1);
+      expect(running.total).toBe(1);
+      expect(completed.jobs).toHaveLength(1);
+      expect(completed.total).toBe(1);
     });
 
     it('should find jobs by source ID', async () => {
