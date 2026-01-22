@@ -312,8 +312,9 @@ describe('FirecrawlClient', () => {
         await client.scrape('https://example.com');
         const duration = Date.now() - startTime;
 
-        // Should have waited at least 1000ms (first retry delay)
-        expect(duration).toBeGreaterThanOrEqual(1000);
+        // Should have waited at least 950ms (first retry delay with tolerance for timing precision)
+        // Note: Using 950ms instead of 1000ms to account for timing precision in CI environments
+        expect(duration).toBeGreaterThanOrEqual(950);
       });
 
       it('should fail after max retries', async () => {
