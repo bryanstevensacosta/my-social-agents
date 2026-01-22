@@ -1,10 +1,12 @@
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+
+import { ISourceConfigurationReadRepository } from '@/ingestion/source/app/queries/repositories/source-configuration-read';
+import { GetSourceByIdResponse } from '@/ingestion/source/app/queries/get-source-by-id/response';
+
 import { IngestionJobsController } from '../http/controllers/ingestion-jobs.controller';
 import { SourcesController } from '../http/controllers/sources.controller';
 import { ScheduleJobDto } from '../http/dto/schedule-job.dto';
 import { ConfigureSourceDto } from '../http/dto/configure-source.dto';
-import { ISourceConfigurationReadRepository } from '@/ingestion/source/app/queries/repositories/source-configuration-read';
-import { SourceConfigurationReadModel } from '@/ingestion/source/app/queries/read-models/source-configuration';
 
 /**
  * Integration Tests for API Layer
@@ -250,36 +252,42 @@ describe('Ingestion API Integration Tests', () => {
 
     describe('GET /sources - listSources', () => {
       it('should list all active sources', async () => {
-        const expectedSources: SourceConfigurationReadModel[] = [
+        const expectedSources: GetSourceByIdResponse[] = [
           {
             sourceId: 'source-1',
             name: 'Source 1',
             sourceType: 'WEB_SCRAPER',
             config: {},
+            credentials: undefined,
             isActive: true,
             createdAt: new Date(),
             updatedAt: new Date(),
             version: 0,
-            consecutiveFailures: 0,
-            successRate: 100.0,
-            totalJobs: 0,
-            lastSuccessAt: null,
-            lastFailureAt: null,
+            healthMetrics: {
+              consecutiveFailures: 0,
+              successRate: 100.0,
+              totalJobs: 0,
+              lastSuccessAt: null,
+              lastFailureAt: null,
+            },
           },
           {
             sourceId: 'source-2',
             name: 'Source 2',
             sourceType: 'RSS_FEED',
             config: {},
+            credentials: undefined,
             isActive: true,
             createdAt: new Date(),
             updatedAt: new Date(),
             version: 0,
-            consecutiveFailures: 0,
-            successRate: 100.0,
-            totalJobs: 0,
-            lastSuccessAt: null,
-            lastFailureAt: null,
+            healthMetrics: {
+              consecutiveFailures: 0,
+              successRate: 100.0,
+              totalJobs: 0,
+              lastSuccessAt: null,
+              lastFailureAt: null,
+            },
           },
         ];
 

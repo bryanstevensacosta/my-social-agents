@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GetSourceByIdQueryHandler } from '../handler';
 import { GetSourceByIdQuery } from '../query';
 import { ISourceConfigurationReadRepository } from '@/ingestion/source/app/queries/repositories/source-configuration-read';
-import { SourceConfigurationReadModel } from '@/ingestion/source/app/queries/read-models/source-configuration';
 import { GetSourceByIdResponse } from '../response';
 
 describe('GetSourceByIdQueryHandler', () => {
@@ -39,7 +38,7 @@ describe('GetSourceByIdQueryHandler', () => {
     it('should return source with health metrics when source exists', async () => {
       // Arrange
       const sourceId = 'source-123';
-      const readModel: SourceConfigurationReadModel = {
+      const readModel: GetSourceByIdResponse = {
         sourceId: 'source-123',
         name: 'Test Source',
         sourceType: 'RSS_FEED',
@@ -48,13 +47,16 @@ describe('GetSourceByIdQueryHandler', () => {
           url: 'https://example.com/feed',
           interval: 3600,
         },
+        credentials: undefined,
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-15T10:00:00Z'),
-        consecutiveFailures: 0,
-        successRate: 95.5,
-        totalJobs: 20,
-        lastSuccessAt: new Date('2024-01-15T10:00:00Z'),
-        lastFailureAt: null,
+        healthMetrics: {
+          consecutiveFailures: 0,
+          successRate: 95.5,
+          totalJobs: 20,
+          lastSuccessAt: new Date('2024-01-15T10:00:00Z'),
+          lastFailureAt: null,
+        },
         version: 1,
       };
 
@@ -67,6 +69,9 @@ describe('GetSourceByIdQueryHandler', () => {
           url: 'https://example.com/feed',
           interval: 3600,
         },
+        credentials: undefined,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-15T10:00:00Z'),
         healthMetrics: {
           successRate: 95.5,
           consecutiveFailures: 0,
@@ -74,6 +79,7 @@ describe('GetSourceByIdQueryHandler', () => {
           lastSuccessAt: new Date('2024-01-15T10:00:00Z'),
           lastFailureAt: null,
         },
+        version: 1,
       };
 
       mockRepository.findById.mockResolvedValue(readModel);
@@ -108,7 +114,7 @@ describe('GetSourceByIdQueryHandler', () => {
     it('should include health metrics in the result', async () => {
       // Arrange
       const sourceId = 'source-456';
-      const readModel: SourceConfigurationReadModel = {
+      const readModel: GetSourceByIdResponse = {
         sourceId: 'source-456',
         name: 'Unhealthy Source',
         sourceType: 'WEB_SCRAPER',
@@ -117,13 +123,16 @@ describe('GetSourceByIdQueryHandler', () => {
           url: 'https://example.com/page',
           selector: '.content',
         },
+        credentials: undefined,
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-15T12:00:00Z'),
-        consecutiveFailures: 5,
-        successRate: 45.2,
-        totalJobs: 10,
-        lastSuccessAt: new Date('2024-01-10T08:00:00Z'),
-        lastFailureAt: new Date('2024-01-15T12:00:00Z'),
+        healthMetrics: {
+          consecutiveFailures: 5,
+          successRate: 45.2,
+          totalJobs: 10,
+          lastSuccessAt: new Date('2024-01-10T08:00:00Z'),
+          lastFailureAt: new Date('2024-01-15T12:00:00Z'),
+        },
         version: 1,
       };
 
@@ -136,6 +145,9 @@ describe('GetSourceByIdQueryHandler', () => {
           url: 'https://example.com/page',
           selector: '.content',
         },
+        credentials: undefined,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-15T12:00:00Z'),
         healthMetrics: {
           successRate: 45.2,
           consecutiveFailures: 5,
@@ -143,6 +155,7 @@ describe('GetSourceByIdQueryHandler', () => {
           lastSuccessAt: new Date('2024-01-10T08:00:00Z'),
           lastFailureAt: new Date('2024-01-15T12:00:00Z'),
         },
+        version: 1,
       };
 
       mockRepository.findById.mockResolvedValue(readModel);
@@ -159,7 +172,7 @@ describe('GetSourceByIdQueryHandler', () => {
     it('should handle sources with null health metric dates', async () => {
       // Arrange
       const sourceId = 'source-789';
-      const readModel: SourceConfigurationReadModel = {
+      const readModel: GetSourceByIdResponse = {
         sourceId: 'source-789',
         name: 'New Source',
         sourceType: 'SOCIAL_MEDIA',
@@ -168,13 +181,16 @@ describe('GetSourceByIdQueryHandler', () => {
           platform: 'twitter',
           username: 'testuser',
         },
+        credentials: undefined,
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-01T00:00:00Z'),
-        consecutiveFailures: 0,
-        successRate: 0,
-        totalJobs: 0,
-        lastSuccessAt: null,
-        lastFailureAt: null,
+        healthMetrics: {
+          consecutiveFailures: 0,
+          successRate: 0,
+          totalJobs: 0,
+          lastSuccessAt: null,
+          lastFailureAt: null,
+        },
         version: 1,
       };
 
@@ -187,6 +203,9 @@ describe('GetSourceByIdQueryHandler', () => {
           platform: 'twitter',
           username: 'testuser',
         },
+        credentials: undefined,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-01T00:00:00Z'),
         healthMetrics: {
           successRate: 0,
           consecutiveFailures: 0,
@@ -194,6 +213,7 @@ describe('GetSourceByIdQueryHandler', () => {
           lastSuccessAt: null,
           lastFailureAt: null,
         },
+        version: 1,
       };
 
       mockRepository.findById.mockResolvedValue(readModel);

@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GetJobsByStatusQueryHandler } from '../handler';
 import { GetJobsByStatusQuery } from '../query';
 import { IIngestionJobReadRepository } from '@/ingestion/job/app/queries/repositories/ingestion-job-read';
-import { IngestionJobReadModel } from '@/ingestion/job/app/queries/read-models/ingestion-job';
 import { JobByStatusItemResponse } from '../response';
 
 describe('GetJobsByStatusQueryHandler', () => {
@@ -43,7 +42,7 @@ describe('GetJobsByStatusQueryHandler', () => {
       const limit = 10;
       const offset = 0;
 
-      const mockReadModels: IngestionJobReadModel[] = [
+      const mockJobs: JobByStatusItemResponse[] = [
         {
           jobId: 'job-1',
           sourceId: 'source-1',
@@ -56,17 +55,6 @@ describe('GetJobsByStatusQueryHandler', () => {
           errorsEncountered: 0,
           bytesProcessed: 1024,
           durationMs: 240000,
-          errors: [],
-          sourceConfig: {
-            sourceId: 'source-1',
-            sourceType: 'RSS_FEED',
-            name: 'Test Source',
-            config: {},
-            isActive: true,
-            createdAt: new Date('2024-01-01T00:00:00Z'),
-            updatedAt: new Date('2024-01-01T00:00:00Z'),
-          },
-          version: 1,
           createdAt: new Date('2024-01-01T00:00:00Z'),
           updatedAt: new Date('2024-01-01T00:05:00Z'),
         },
@@ -82,17 +70,6 @@ describe('GetJobsByStatusQueryHandler', () => {
           errorsEncountered: 0,
           bytesProcessed: 512,
           durationMs: 120000,
-          errors: [],
-          sourceConfig: {
-            sourceId: 'source-2',
-            sourceType: 'WEB_SCRAPER',
-            name: 'Test Source 2',
-            config: {},
-            isActive: true,
-            createdAt: new Date('2024-01-02T00:00:00Z'),
-            updatedAt: new Date('2024-01-02T00:00:00Z'),
-          },
-          version: 1,
           createdAt: new Date('2024-01-02T00:00:00Z'),
           updatedAt: new Date('2024-01-02T00:05:00Z'),
         },
@@ -131,7 +108,10 @@ describe('GetJobsByStatusQueryHandler', () => {
         },
       ];
 
-      mockJobReadRepository.findByStatus.mockResolvedValue(mockReadModels);
+      mockJobReadRepository.findByStatus.mockResolvedValue({
+        jobs: mockJobs,
+        total: 25,
+      });
       mockJobReadRepository.countByStatus.mockResolvedValue(25);
 
       const query = new GetJobsByStatusQuery(status, limit, offset);
@@ -147,13 +127,12 @@ describe('GetJobsByStatusQueryHandler', () => {
         limit,
         offset,
       );
-      expect(mockJobReadRepository.countByStatus).toHaveBeenCalledWith(status);
     });
 
     it('should handle different statuses', async () => {
       // Arrange
       const status = 'FAILED';
-      const mockReadModels: IngestionJobReadModel[] = [
+      const mockJobs: JobByStatusItemResponse[] = [
         {
           jobId: 'job-3',
           sourceId: 'source-3',
@@ -166,26 +145,6 @@ describe('GetJobsByStatusQueryHandler', () => {
           errorsEncountered: 1,
           bytesProcessed: 0,
           durationMs: 5000,
-          errors: [
-            {
-              errorId: 'error-1',
-              timestamp: new Date('2024-01-03T00:01:05Z'),
-              errorType: 'NetworkError',
-              message: 'Connection timeout',
-              stackTrace: null,
-              retryCount: 0,
-            },
-          ],
-          sourceConfig: {
-            sourceId: 'source-3',
-            sourceType: 'RSS_FEED',
-            name: 'Test Source 3',
-            config: {},
-            isActive: true,
-            createdAt: new Date('2024-01-03T00:00:00Z'),
-            updatedAt: new Date('2024-01-03T00:00:00Z'),
-          },
-          version: 1,
           createdAt: new Date('2024-01-03T00:00:00Z'),
           updatedAt: new Date('2024-01-03T00:01:05Z'),
         },
@@ -209,8 +168,10 @@ describe('GetJobsByStatusQueryHandler', () => {
         },
       ];
 
-      mockJobReadRepository.findByStatus.mockResolvedValue(mockReadModels);
-      mockJobReadRepository.countByStatus.mockResolvedValue(3);
+      mockJobReadRepository.findByStatus.mockResolvedValue({
+        jobs: mockJobs,
+        total: 3,
+      });
 
       const query = new GetJobsByStatusQuery(status);
 
@@ -233,8 +194,10 @@ describe('GetJobsByStatusQueryHandler', () => {
       const limit = 5;
       const offset = 10;
 
-      mockJobReadRepository.findByStatus.mockResolvedValue([]);
-      mockJobReadRepository.countByStatus.mockResolvedValue(15);
+      mockJobReadRepository.findByStatus.mockResolvedValue({
+        jobs: [],
+        total: 15,
+      });
 
       const query = new GetJobsByStatusQuery(status, limit, offset);
 
@@ -254,8 +217,10 @@ describe('GetJobsByStatusQueryHandler', () => {
     it('should return empty array when no jobs match status', async () => {
       // Arrange
       const status = 'PENDING';
-      mockJobReadRepository.findByStatus.mockResolvedValue([]);
-      mockJobReadRepository.countByStatus.mockResolvedValue(0);
+      mockJobReadRepository.findByStatus.mockResolvedValue({
+        jobs: [],
+        total: 0,
+      });
 
       const query = new GetJobsByStatusQuery(status);
 

@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 // Bounded context imports
 import { IIngestionJobReadRepository } from '@/ingestion/job/app/queries/repositories/ingestion-job-read';
-import { IngestionJobReadModel } from '@/ingestion/job/app/queries/read-models/ingestion-job';
 
 // Relative imports (same query folder)
 import { GetJobHistoryQueryHandler } from '../handler';
@@ -41,7 +40,7 @@ describe('GetJobHistoryQueryHandler', () => {
     it('should return jobs ordered by executedAt DESC', async () => {
       // Arrange
       const sourceId = 'source-123';
-      const mockReadModels: IngestionJobReadModel[] = [
+      const mockJobs: JobHistoryItemResponse[] = [
         {
           jobId: 'job-3',
           sourceId: 'source-123',
@@ -54,17 +53,6 @@ describe('GetJobHistoryQueryHandler', () => {
           errorsEncountered: 0,
           bytesProcessed: 2048,
           durationMs: 240000,
-          errors: [],
-          sourceConfig: {
-            sourceId: 'source-123',
-            sourceType: 'RSS_FEED',
-            name: 'Test Source',
-            config: {},
-            isActive: true,
-            createdAt: new Date('2024-01-01T00:00:00Z'),
-            updatedAt: new Date('2024-01-01T00:00:00Z'),
-          },
-          version: 1,
           createdAt: new Date('2024-01-03T00:00:00Z'),
           updatedAt: new Date('2024-01-03T00:05:00Z'),
         },
@@ -80,17 +68,6 @@ describe('GetJobHistoryQueryHandler', () => {
           errorsEncountered: 0,
           bytesProcessed: 1024,
           durationMs: 240000,
-          errors: [],
-          sourceConfig: {
-            sourceId: 'source-123',
-            sourceType: 'RSS_FEED',
-            name: 'Test Source',
-            config: {},
-            isActive: true,
-            createdAt: new Date('2024-01-01T00:00:00Z'),
-            updatedAt: new Date('2024-01-01T00:00:00Z'),
-          },
-          version: 1,
           createdAt: new Date('2024-01-02T00:00:00Z'),
           updatedAt: new Date('2024-01-02T00:05:00Z'),
         },
@@ -106,17 +83,6 @@ describe('GetJobHistoryQueryHandler', () => {
           errorsEncountered: 0,
           bytesProcessed: 512,
           durationMs: 240000,
-          errors: [],
-          sourceConfig: {
-            sourceId: 'source-123',
-            sourceType: 'RSS_FEED',
-            name: 'Test Source',
-            config: {},
-            isActive: true,
-            createdAt: new Date('2024-01-01T00:00:00Z'),
-            updatedAt: new Date('2024-01-01T00:00:00Z'),
-          },
-          version: 1,
           createdAt: new Date('2024-01-01T00:00:00Z'),
           updatedAt: new Date('2024-01-01T00:05:00Z'),
         },
@@ -171,7 +137,10 @@ describe('GetJobHistoryQueryHandler', () => {
         },
       ];
 
-      mockJobReadRepository.findBySourceId.mockResolvedValue(mockReadModels);
+      mockJobReadRepository.findBySourceId.mockResolvedValue({
+        jobs: mockJobs,
+        total: mockJobs.length,
+      });
 
       const query = new GetJobHistoryQuery(sourceId);
 
@@ -201,7 +170,7 @@ describe('GetJobHistoryQueryHandler', () => {
       // Arrange
       const sourceId = 'source-456';
       const limit = 5;
-      const mockReadModels: IngestionJobReadModel[] = [
+      const mockJobs: JobHistoryItemResponse[] = [
         {
           jobId: 'job-5',
           sourceId: 'source-456',
@@ -214,17 +183,6 @@ describe('GetJobHistoryQueryHandler', () => {
           errorsEncountered: 0,
           bytesProcessed: 800,
           durationMs: 240000,
-          errors: [],
-          sourceConfig: {
-            sourceId: 'source-456',
-            sourceType: 'WEB_SCRAPER',
-            name: 'Test Source 2',
-            config: {},
-            isActive: true,
-            createdAt: new Date('2024-01-01T00:00:00Z'),
-            updatedAt: new Date('2024-01-01T00:00:00Z'),
-          },
-          version: 1,
           createdAt: new Date('2024-01-05T00:00:00Z'),
           updatedAt: new Date('2024-01-05T00:05:00Z'),
         },
@@ -249,7 +207,10 @@ describe('GetJobHistoryQueryHandler', () => {
         },
       ];
 
-      mockJobReadRepository.findBySourceId.mockResolvedValue(mockReadModels);
+      mockJobReadRepository.findBySourceId.mockResolvedValue({
+        jobs: mockJobs,
+        total: mockJobs.length,
+      });
 
       const query = new GetJobHistoryQuery(sourceId, limit);
 
@@ -268,7 +229,10 @@ describe('GetJobHistoryQueryHandler', () => {
     it('should return empty array when source has no jobs', async () => {
       // Arrange
       const sourceId = 'source-no-jobs';
-      mockJobReadRepository.findBySourceId.mockResolvedValue([]);
+      mockJobReadRepository.findBySourceId.mockResolvedValue({
+        jobs: [],
+        total: 0,
+      });
 
       const query = new GetJobHistoryQuery(sourceId);
 

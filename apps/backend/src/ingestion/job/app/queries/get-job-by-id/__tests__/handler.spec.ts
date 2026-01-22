@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetJobByIdQueryHandler } from '../handler';
 import { GetJobByIdQuery } from '../query';
+import { GetJobByIdResponse } from '../response';
 import { IIngestionJobReadRepository } from '@/ingestion/job/app/queries/repositories/ingestion-job-read';
-import { IngestionJobReadModel } from '@/ingestion/job/app/queries/read-models/ingestion-job';
 
 describe('GetJobByIdQueryHandler', () => {
   let handler: GetJobByIdQueryHandler;
@@ -34,16 +34,23 @@ describe('GetJobByIdQueryHandler', () => {
   });
 
   describe('execute', () => {
-    it('should return job read model when job exists', async () => {
+    it('should return job response when job exists', async () => {
       // Arrange
       const jobId = 'job-123';
-      const mockJobReadModel: IngestionJobReadModel = {
+      const mockJobResponse: GetJobByIdResponse = {
         jobId: 'job-123',
         sourceId: 'source-456',
         status: 'COMPLETED',
         scheduledAt: new Date('2024-01-01T00:00:00Z'),
         executedAt: new Date('2024-01-01T00:01:00Z'),
         completedAt: new Date('2024-01-01T00:05:00Z'),
+        metrics: {
+          itemsCollected: 10,
+          duplicatesDetected: 2,
+          errorsEncountered: 0,
+          bytesProcessed: 1024,
+          durationMs: 240000,
+        },
         itemsCollected: 10,
         duplicatesDetected: 2,
         errorsEncountered: 0,
@@ -64,7 +71,7 @@ describe('GetJobByIdQueryHandler', () => {
         updatedAt: new Date('2024-01-01T00:05:00Z'),
       };
 
-      mockJobReadRepository.findById.mockResolvedValue(mockJobReadModel);
+      mockJobReadRepository.findById.mockResolvedValue(mockJobResponse);
 
       const query = new GetJobByIdQuery(jobId);
 
@@ -72,7 +79,7 @@ describe('GetJobByIdQueryHandler', () => {
       const result = await handler.execute(query);
 
       // Assert
-      expect(result).toEqual(mockJobReadModel);
+      expect(result).toEqual(mockJobResponse);
       expect(mockJobReadRepository.findById).toHaveBeenCalledWith(jobId);
       expect(mockJobReadRepository.findById).toHaveBeenCalledTimes(1);
     });

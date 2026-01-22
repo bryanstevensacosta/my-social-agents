@@ -135,14 +135,15 @@ describe('SourceConfiguration Repository Integration', () => {
     });
 
     it('should find source by ID', async () => {
-      const found = await readRepo.findByIdWithHealth('read-test-1');
+      const found = await readRepo.findById('read-test-1');
 
       expect(found).toBeDefined();
       expect(found?.sourceId).toBe('read-test-1');
       expect(found?.name).toBe('Active Source');
-      expect(found?.successRate).toBeDefined();
-      expect(found?.consecutiveFailures).toBeDefined();
-      expect(found?.totalJobs).toBeDefined();
+      expect(found?.healthMetrics).toBeDefined();
+      expect(found?.healthMetrics.successRate).toBeDefined();
+      expect(found?.healthMetrics.consecutiveFailures).toBeDefined();
+      expect(found?.healthMetrics.totalJobs).toBeDefined();
     });
 
     it('should return null for non-existent source', async () => {

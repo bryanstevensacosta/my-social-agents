@@ -32,6 +32,7 @@ export class TypeOrmSourceConfigurationFactory implements ISourceConfigurationFa
     const sourceType = SourceType.fromString(data.sourceType);
 
     // Reconstitute aggregate with version from database
+    // Health metrics are now nested in healthMetrics object
     return SourceConfiguration.reconstitute({
       sourceId: data.sourceId,
       sourceType,
@@ -41,11 +42,11 @@ export class TypeOrmSourceConfigurationFactory implements ISourceConfigurationFa
       isActive: data.isActive,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
-      consecutiveFailures: data.consecutiveFailures,
-      successRate: data.successRate,
-      totalJobs: data.totalJobs || 0, // Default to 0 for backward compatibility
-      lastSuccessAt: data.lastSuccessAt,
-      lastFailureAt: data.lastFailureAt,
+      consecutiveFailures: data.healthMetrics.consecutiveFailures,
+      successRate: data.healthMetrics.successRate,
+      totalJobs: data.healthMetrics.totalJobs || 0,
+      lastSuccessAt: data.healthMetrics.lastSuccessAt,
+      lastFailureAt: data.healthMetrics.lastFailureAt,
       version: data.version,
     });
   }

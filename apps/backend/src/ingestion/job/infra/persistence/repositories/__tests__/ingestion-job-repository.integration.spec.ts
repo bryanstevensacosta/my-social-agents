@@ -217,8 +217,8 @@ describe('IngestionJob Repository Integration', () => {
     it('should find jobs by source ID', async () => {
       const jobs = await readRepo.findBySourceId('test-source-1');
 
-      expect(jobs).toHaveLength(3);
-      expect(jobs.every((j) => j.sourceId === 'test-source-1')).toBe(true);
+      expect(jobs.jobs).toHaveLength(3);
+      expect(jobs.jobs.every((j) => j.sourceId === 'test-source-1')).toBe(true);
     });
 
     it('should find scheduled jobs before a date', async () => {

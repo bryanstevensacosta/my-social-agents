@@ -1,10 +1,10 @@
 import { QueryBus } from '@nestjs/cqrs';
 import { IngestionJobsController } from '../ingestion-jobs.controller';
 import { SourcesController } from '../sources.controller';
-import { GetJobsByStatusResponse } from '@/ingestion/job/app/queries/get-jobs-by-status/query';
-import { GetJobHistoryResponse } from '@/ingestion/job/app/queries/get-job-history/query';
+import { GetJobsByStatusResponse } from '@/ingestion/job/app/queries/get-jobs-by-status/response';
+import { GetJobHistoryResponse } from '@/ingestion/job/app/queries/get-job-history/response';
+import { GetJobByIdResponse } from '@/ingestion/job/app/queries/get-job-by-id/response';
 import { ISourceConfigurationReadRepository } from '@/ingestion/source/app/queries/repositories/source-configuration-read';
-import { IngestionJobReadModel } from '@/ingestion/job/app/queries/read-models/ingestion-job';
 
 /**
  * Integration Tests for HTTP Query Endpoints
@@ -34,7 +34,7 @@ describe('HTTP Query Endpoints Integration Tests', () => {
 
     it('should retrieve jobs by status', async () => {
       const status = 'COMPLETED';
-      const expectedJobs: IngestionJobReadModel[] = [
+      const expectedJobs: GetJobByIdResponse[] = [
         {
           jobId: 'job-1',
           sourceId: 'source-1',
@@ -42,6 +42,13 @@ describe('HTTP Query Endpoints Integration Tests', () => {
           scheduledAt: new Date('2026-01-01T10:00:00Z'),
           executedAt: new Date('2026-01-01T10:01:00Z'),
           completedAt: new Date('2026-01-01T10:05:00Z'),
+          metrics: {
+            itemsCollected: 10,
+            duplicatesDetected: 2,
+            errorsEncountered: 0,
+            bytesProcessed: 1024,
+            durationMs: 240000,
+          },
           itemsCollected: 10,
           duplicatesDetected: 2,
           errorsEncountered: 0,
@@ -150,7 +157,7 @@ describe('HTTP Query Endpoints Integration Tests', () => {
 
     it('should retrieve job history for a source', async () => {
       const sourceId = 'source-123';
-      const expectedJobs: IngestionJobReadModel[] = [
+      const expectedJobs: GetJobByIdResponse[] = [
         {
           jobId: 'job-1',
           sourceId: 'source-123',
@@ -158,6 +165,13 @@ describe('HTTP Query Endpoints Integration Tests', () => {
           scheduledAt: new Date('2026-01-03T10:00:00Z'),
           executedAt: new Date('2026-01-03T10:01:00Z'),
           completedAt: new Date('2026-01-03T10:05:00Z'),
+          metrics: {
+            itemsCollected: 15,
+            duplicatesDetected: 3,
+            errorsEncountered: 0,
+            bytesProcessed: 2048,
+            durationMs: 240000,
+          },
           itemsCollected: 15,
           duplicatesDetected: 3,
           errorsEncountered: 0,
@@ -184,6 +198,13 @@ describe('HTTP Query Endpoints Integration Tests', () => {
           scheduledAt: new Date('2026-01-02T10:00:00Z'),
           executedAt: new Date('2026-01-02T10:01:00Z'),
           completedAt: new Date('2026-01-02T10:05:00Z'),
+          metrics: {
+            itemsCollected: 12,
+            duplicatesDetected: 1,
+            errorsEncountered: 0,
+            bytesProcessed: 1536,
+            durationMs: 240000,
+          },
           itemsCollected: 12,
           duplicatesDetected: 1,
           errorsEncountered: 0,

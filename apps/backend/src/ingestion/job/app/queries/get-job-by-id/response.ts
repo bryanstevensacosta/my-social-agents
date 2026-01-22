@@ -1,8 +1,22 @@
 /**
  * GetJobByIdResponse
  *
- * Response type for GetJobByIdQuery.
- * Query-specific response that maps from IngestionJobReadModel.
+ * Response type for GetJobByIdQuery using PRIMITIVES (not VOs).
+ * Returned directly by repositories (no intermediate ReadModel).
+ *
+ * CRITICAL ARCHITECTURE (Clean Architecture / DDD):
+ * - Response types are OUTPUT CONTRACTS (application layer)
+ * - They MUST use primitives, NOT Value Objects
+ * - VOs belong to domain and should NOT leak to application/API layers
+ * - Repositories construct VOs internally, then extract primitives for Response
+ * - Query handlers return repository results without mapping
+ * - API controllers receive primitives ready for JSON serialization
+ *
+ * Why primitives?
+ * - Response is a contract for external consumers (API/UI)
+ * - VOs have domain behavior and invariants (internal to domain)
+ * - Exposing VOs couples domain to output format
+ * - Breaks Dependency Rule (application depends on domain, not vice versa)
  *
  * Naming Convention: {QueryName}Response
  * Location: app/queries/<query-name>/response.ts
@@ -10,21 +24,35 @@
  * Requirements: 6.1, 6.2
  */
 export interface GetJobByIdResponse {
+  // IDs as primitives (string UUIDs)
   jobId: string;
   sourceId: string;
+
+  // Status as primitive string
   status: string;
+
+  // Timestamps
   scheduledAt: Date;
   executedAt: Date | null;
   completedAt: Date | null;
 
-  // Metrics (flattened)
+  // Metrics as plain object (primitives)
+  metrics: {
+    itemsCollected: number;
+    duplicatesDetected: number;
+    errorsEncountered: number;
+    bytesProcessed: number;
+    durationMs: number;
+  };
+
+  // Flat properties for backward compatibility (access via metrics.* instead)
   itemsCollected: number;
   duplicatesDetected: number;
   errorsEncountered: number;
   bytesProcessed: number;
   durationMs: number;
 
-  // Errors (as JSON or array)
+  // Errors (as array of plain objects - entities within aggregate)
   errors: Array<{
     errorId: string;
     timestamp: Date;
@@ -34,7 +62,7 @@ export interface GetJobByIdResponse {
     retryCount: number;
   }>;
 
-  // Source configuration (as JSON)
+  // Source configuration (denormalized for query optimization)
   sourceConfig: {
     sourceId: string;
     sourceType: string;
