@@ -1,0 +1,108 @@
+name: Auto Retry Failed Jobs
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types:
+      - completed
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  retry-on-github-api-failure:
+    name: Retry on GitHub API Failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+      - name: Check if failure was due to GitHub API issues
+        id: check-failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+
+            // Get jobs for this workflow run
+            const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+
+            // Check if any job failed due to GitHub API issues
+            const apiFailures = jobs.jobs.filter(job => {
+              if (job.conclusion !== 'failure') return false;
+              
+              // Check for common GitHub API error patterns
+              const errorPatterns = [
+                'HTTP 500',
+                'Internal Server Error',
+                'unable to access',
+                'The requested URL returned error: 500',
+                'RPC failed',
+                'expected \'packfile\'',
+              ];
+              
+              // Note: We can't access logs here, so we check job names
+              // that commonly fail due to API issues
+              const apiSensitiveJobs = ['Secret Scan', 'Checkout code', 'Setup & Cache'];
+              return apiSensitiveJobs.some(name => job.name.includes(name));
+            });
+
+            if (apiFailures.length > 0) {
+              console.log(`Found ${apiFailures.length} jobs that may have failed due to GitHub API issues`);
+              core.setOutput('should_retry', 'true');
+              core.setOutput('failed_jobs', apiFailures.map(j => j.name).join(', '));
+            } else {
+              console.log('No GitHub API failures detected');
+              core.setOutput('should_retry', 'false');
+            }
+
+      - name: Wait before retry
+        if: steps.check-failure.outputs.should_retry == 'true'
+        run: |
+          echo "⏳ Waiting 30 seconds before retrying..."
+          echo "Failed jobs: ${{ steps.check-failure.outputs.failed_jobs }}"
+          sleep 30
+
+      - name: Retry workflow
+        if: steps.check-failure.outputs.should_retry == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+
+            // Check if we've already retried this run
+            const { data: workflowRuns } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: context.payload.workflow_run.workflow_id,
+              per_page: 10,
+            });
+
+            // Count retries for this commit
+            const sameCommitRuns = workflowRuns.workflow_runs.filter(run => 
+              run.head_sha === context.payload.workflow_run.head_sha
+            );
+
+            const retryCount = sameCommitRuns.length - 1; // Exclude the original run
+            const maxRetries = 2;
+
+            if (retryCount >= maxRetries) {
+              console.log(`⚠️ Already retried ${retryCount} times. Not retrying again.`);
+              core.setFailed(`Workflow failed after ${retryCount} retries. Manual intervention required.`);
+              return;
+            }
+
+            console.log(`🔄 Retrying workflow (attempt ${retryCount + 1}/${maxRetries})...`);
+
+            // Rerun failed jobs
+            await github.rest.actions.reRunWorkflowFailedJobs({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+
+            console.log('✅ Retry triggered successfully');
