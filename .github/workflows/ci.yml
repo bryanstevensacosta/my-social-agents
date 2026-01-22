@@ -175,6 +175,8 @@ jobs:
     name: Secret Scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Retry this job automatically on failure (GitHub API issues)
+    continue-on-error: false
 
     steps:
       - name: Checkout code
