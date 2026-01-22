@@ -47,8 +47,11 @@ describe('HtmlParsingStrategy - Property-Based Tests', () => {
           // Turndown uses ATX-style headers: # Header, ## Header, etc.
           // The header line should start with the correct number of # followed by space and text
           const expectedPrefix = '#'.repeat(level);
+
+          // HTML normalizes multiple spaces to single space, so we need to normalize expected text too
+          const normalizedText = trimmedText.replace(/\s+/g, ' ');
           const headerRegex = new RegExp(
-            `^${expectedPrefix}\\s+${trimmedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+            `^${expectedPrefix}\\s+${normalizedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
             'm',
           );
 
@@ -57,7 +60,7 @@ describe('HtmlParsingStrategy - Property-Based Tests', () => {
           const hasCorrectHeader =
             headerRegex.test(markdown) ||
             (markdown.includes(expectedPrefix) &&
-              markdown.includes(trimmedText));
+              markdown.includes(normalizedText));
 
           expect(hasCorrectHeader).toBe(true);
         }),
