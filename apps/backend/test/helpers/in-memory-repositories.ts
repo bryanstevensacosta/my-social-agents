@@ -8,12 +8,14 @@
 import { IngestionJob } from '@/ingestion/job/domain/aggregates/ingestion-job';
 import { IIngestionJobWriteRepository } from '@/ingestion/job/domain/interfaces/repositories/ingestion-job-write';
 import { IIngestionJobReadRepository } from '@/ingestion/job/app/queries/repositories/ingestion-job-read';
-import { IngestionJobReadModel } from '@/ingestion/job/app/queries/read-models/ingestion-job';
+import { GetJobByIdResponse } from '@/ingestion/job/app/queries/get-job-by-id/response';
+import { GetJobsByStatusResponse } from '@/ingestion/job/app/queries/get-jobs-by-status/response';
+import { GetJobHistoryResponse } from '@/ingestion/job/app/queries/get-job-history/response';
 import { IIngestionJobFactory } from '@/ingestion/job/domain/interfaces/factories/ingestion-job-factory';
 import { SourceConfiguration } from '@/ingestion/source/domain/aggregates/source-configuration';
 import { ISourceConfigurationWriteRepository } from '@/ingestion/source/domain/interfaces/repositories/source-configuration-write';
 import { ISourceConfigurationReadRepository } from '@/ingestion/source/app/queries/repositories/source-configuration-read';
-import { SourceConfigurationReadModel } from '@/ingestion/source/app/queries/read-models/source-configuration';
+import { GetSourceByIdResponse } from '@/ingestion/source/app/queries/get-source-by-id/response';
 import { ISourceConfigurationFactory } from '@/ingestion/source/domain/interfaces/factories/source-configuration-factory';
 import { SourceType } from '@/ingestion/source/domain/value-objects/source-type';
 import { ContentItem } from '@/ingestion/content/domain/aggregates/content-item';
@@ -175,24 +177,28 @@ export class InMemorySourceWriteRepository implements ISourceConfigurationWriteR
 export class InMemoryJobReadRepository implements IIngestionJobReadRepository {
   constructor(private writeRepo: InMemoryJobWriteRepository) {}
 
-  findById(jobId: string): Promise<IngestionJobReadModel | null> {
-    const jobs = this.writeRepo.getAll();
-    const job = jobs.find((j) => j.jobId === jobId);
-
-    if (!job) return Promise.resolve(null);
-
-    return Promise.resolve({
+  private toResponse(job: StoredJob): GetJobByIdResponse {
+    return {
       jobId: job.jobId,
       sourceId: job.sourceConfig.sourceId,
       status: job.status.toString(),
       scheduledAt: job.scheduledAt,
       executedAt: job.executedAt,
       completedAt: job.completedAt,
+      // Flat properties for backward compatibility
       itemsCollected: job.metrics.itemsCollected,
       duplicatesDetected: job.metrics.duplicatesDetected,
       errorsEncountered: job.metrics.errorsEncountered,
       bytesProcessed: job.metrics.bytesProcessed,
       durationMs: job.metrics.durationMs,
+      // Nested metrics object
+      metrics: {
+        itemsCollected: job.metrics.itemsCollected,
+        duplicatesDetected: job.metrics.duplicatesDetected,
+        errorsEncountered: job.metrics.errorsEncountered,
+        bytesProcessed: job.metrics.bytesProcessed,
+        durationMs: job.metrics.durationMs,
+      },
       errors: job.errors.map((e) => ({
         errorId: e.errorId,
         timestamp: e.timestamp,
@@ -213,49 +219,34 @@ export class InMemoryJobReadRepository implements IIngestionJobReadRepository {
       version: job.version,
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    };
   }
 
-  findByStatus(status: string): Promise<IngestionJobReadModel[]> {
+  findById(jobId: string): Promise<GetJobByIdResponse | null> {
     const jobs = this.writeRepo.getAll();
+    const job = jobs.find((j) => j.jobId === jobId);
 
-    return Promise.resolve(
-      jobs
-        .filter((j) => j.status.toString() === status)
-        .map((job) => ({
-          jobId: job.jobId,
-          sourceId: job.sourceConfig.sourceId,
-          status: job.status.toString(),
-          scheduledAt: job.scheduledAt,
-          executedAt: job.executedAt,
-          completedAt: job.completedAt,
-          itemsCollected: job.metrics.itemsCollected,
-          duplicatesDetected: job.metrics.duplicatesDetected,
-          errorsEncountered: job.metrics.errorsEncountered,
-          bytesProcessed: job.metrics.bytesProcessed,
-          durationMs: job.metrics.durationMs,
-          errors: job.errors.map((e) => ({
-            errorId: e.errorId,
-            timestamp: e.timestamp,
-            errorType: e.errorType.toString(),
-            message: e.message,
-            stackTrace: e.stackTrace ?? null,
-            retryCount: e.retryCount,
-          })),
-          sourceConfig: {
-            sourceId: job.sourceConfig.sourceId,
-            sourceType: job.sourceConfig.sourceType.toString(),
-            name: job.sourceConfig.name,
-            config: job.sourceConfig.config,
-            isActive: job.sourceConfig.isActive,
-            createdAt: job.sourceConfig.createdAt,
-            updatedAt: job.sourceConfig.updatedAt,
-          },
-          version: job.version,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })),
-    );
+    if (!job) return Promise.resolve(null);
+
+    return Promise.resolve(this.toResponse(job));
+  }
+
+  findByStatus(
+    status: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<GetJobsByStatusResponse> {
+    const jobs = this.writeRepo.getAll();
+    const filtered = jobs.filter((j) => j.status.toString() === status);
+
+    const start = offset || 0;
+    const end = limit ? start + limit : filtered.length;
+    const paginated = filtered.slice(start, end);
+
+    return Promise.resolve({
+      jobs: paginated.map((job) => this.toResponse(job)),
+      total: filtered.length,
+    });
   }
 
   countByStatus(status: string): Promise<number> {
@@ -265,45 +256,29 @@ export class InMemoryJobReadRepository implements IIngestionJobReadRepository {
     );
   }
 
-  findBySourceId(sourceId: string): Promise<IngestionJobReadModel[]> {
+  findBySourceId(
+    sourceId: string,
+    limit?: number,
+  ): Promise<GetJobHistoryResponse> {
     const jobs = this.writeRepo.getAll();
+    const filtered = jobs.filter((j) => j.sourceConfig.sourceId === sourceId);
 
+    const paginated = limit ? filtered.slice(0, limit) : filtered;
+
+    return Promise.resolve({
+      jobs: paginated.map((job) => this.toResponse(job)),
+      total: filtered.length,
+    });
+  }
+
+  findScheduledJobs(before: Date): Promise<GetJobByIdResponse[]> {
+    const jobs = this.writeRepo.getAll();
     return Promise.resolve(
       jobs
-        .filter((j) => j.sourceConfig.sourceId === sourceId)
-        .map((job) => ({
-          jobId: job.jobId,
-          sourceId: job.sourceConfig.sourceId,
-          status: job.status.toString(),
-          scheduledAt: job.scheduledAt,
-          executedAt: job.executedAt,
-          completedAt: job.completedAt,
-          itemsCollected: job.metrics.itemsCollected,
-          duplicatesDetected: job.metrics.duplicatesDetected,
-          errorsEncountered: job.metrics.errorsEncountered,
-          bytesProcessed: job.metrics.bytesProcessed,
-          durationMs: job.metrics.durationMs,
-          errors: job.errors.map((e) => ({
-            errorId: e.errorId,
-            timestamp: e.timestamp,
-            errorType: e.errorType.toString(),
-            message: e.message,
-            stackTrace: e.stackTrace ?? null,
-            retryCount: e.retryCount,
-          })),
-          sourceConfig: {
-            sourceId: job.sourceConfig.sourceId,
-            sourceType: job.sourceConfig.sourceType.toString(),
-            name: job.sourceConfig.name,
-            config: job.sourceConfig.config,
-            isActive: job.sourceConfig.isActive,
-            createdAt: job.sourceConfig.createdAt,
-            updatedAt: job.sourceConfig.updatedAt,
-          },
-          version: job.version,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })),
+        .filter(
+          (j) => j.status.toString() === 'PENDING' && j.scheduledAt <= before,
+        )
+        .map((job) => this.toResponse(job)),
     );
   }
 }
@@ -341,13 +316,8 @@ export class InMemoryJobFactory implements IIngestionJobFactory {
 export class InMemorySourceReadRepository implements ISourceConfigurationReadRepository {
   constructor(private writeRepo: InMemorySourceWriteRepository) {}
 
-  findById(sourceId: string): Promise<SourceConfigurationReadModel | null> {
-    const sources = this.writeRepo.getAll();
-    const source = sources.find((s) => s.sourceId === sourceId);
-
-    if (!source) return Promise.resolve(null);
-
-    return Promise.resolve({
+  private toResponse(source: StoredSource): GetSourceByIdResponse {
+    return {
       sourceId: source.sourceId,
       name: source.name,
       sourceType: source.sourceType.toString(),
@@ -356,111 +326,53 @@ export class InMemorySourceReadRepository implements ISourceConfigurationReadRep
       isActive: source.isActive,
       createdAt: source.createdAt,
       updatedAt: source.updatedAt,
-      consecutiveFailures: source.consecutiveFailures,
-      successRate: source.successRate,
-      totalJobs: source.totalJobs,
-      lastSuccessAt: source.lastSuccessAt,
-      lastFailureAt: source.lastFailureAt,
       version: source.version,
-    });
+      healthMetrics: {
+        consecutiveFailures: source.consecutiveFailures,
+        successRate: source.successRate,
+        totalJobs: source.totalJobs,
+        lastSuccessAt: source.lastSuccessAt,
+        lastFailureAt: source.lastFailureAt,
+      },
+    };
   }
 
-  findByIdWithHealth(
-    sourceId: string,
-  ): Promise<SourceConfigurationReadModel | null> {
+  findById(sourceId: string): Promise<GetSourceByIdResponse | null> {
     const sources = this.writeRepo.getAll();
     const source = sources.find((s) => s.sourceId === sourceId);
 
     if (!source) return Promise.resolve(null);
 
-    return Promise.resolve({
-      sourceId: source.sourceId,
-      name: source.name,
-      sourceType: source.sourceType.toString(),
-      config: source.config,
-      isActive: source.isActive,
-      createdAt: source.createdAt,
-      updatedAt: source.updatedAt,
-      consecutiveFailures: source.consecutiveFailures,
-      successRate: source.successRate,
-      totalJobs: source.totalJobs,
-      lastSuccessAt: source.lastSuccessAt,
-      lastFailureAt: source.lastFailureAt,
-      version: source.version,
-    });
+    return Promise.resolve(this.toResponse(source));
   }
 
-  findActive(): Promise<SourceConfigurationReadModel[]> {
+  findActive(): Promise<GetSourceByIdResponse[]> {
     const sources = this.writeRepo.getAll();
 
     return Promise.resolve(
       sources
         .filter((s) => s.isActive)
-        .map((source) => ({
-          sourceId: source.sourceId,
-          name: source.name,
-          sourceType: source.sourceType.toString(),
-          config: source.config,
-          credentials: source.credentials,
-          isActive: source.isActive,
-          createdAt: source.createdAt,
-          updatedAt: source.updatedAt,
-          consecutiveFailures: source.consecutiveFailures,
-          successRate: source.successRate,
-          totalJobs: source.totalJobs,
-          lastSuccessAt: source.lastSuccessAt,
-          lastFailureAt: source.lastFailureAt,
-          version: source.version,
-        })),
+        .map((source) => this.toResponse(source)),
     );
   }
 
-  findByType(type: string): Promise<SourceConfigurationReadModel[]> {
+  findByType(type: string): Promise<GetSourceByIdResponse[]> {
     const sources = this.writeRepo.getAll();
 
     return Promise.resolve(
       sources
         .filter((s) => s.sourceType.toString() === type)
-        .map((source) => ({
-          sourceId: source.sourceId,
-          name: source.name,
-          sourceType: source.sourceType.toString(),
-          config: source.config,
-          credentials: source.credentials,
-          isActive: source.isActive,
-          createdAt: source.createdAt,
-          updatedAt: source.updatedAt,
-          consecutiveFailures: source.consecutiveFailures,
-          successRate: source.successRate,
-          totalJobs: source.totalJobs,
-          lastSuccessAt: source.lastSuccessAt,
-          lastFailureAt: source.lastFailureAt,
-          version: source.version,
-        })),
+        .map((source) => this.toResponse(source)),
     );
   }
 
-  findUnhealthy(threshold: number): Promise<SourceConfigurationReadModel[]> {
+  findUnhealthy(threshold: number): Promise<GetSourceByIdResponse[]> {
     const sources = this.writeRepo.getAll();
 
     return Promise.resolve(
       sources
         .filter((s) => s.consecutiveFailures >= threshold)
-        .map((source) => ({
-          sourceId: source.sourceId,
-          name: source.name,
-          sourceType: source.sourceType.toString(),
-          config: source.config,
-          isActive: source.isActive,
-          createdAt: source.createdAt,
-          updatedAt: source.updatedAt,
-          consecutiveFailures: source.consecutiveFailures,
-          successRate: source.successRate,
-          totalJobs: source.totalJobs,
-          lastSuccessAt: source.lastSuccessAt,
-          lastFailureAt: source.lastFailureAt,
-          version: source.version,
-        })),
+        .map((source) => this.toResponse(source)),
     );
   }
 }
@@ -484,11 +396,11 @@ export class InMemorySourceFactory implements ISourceConfigurationFactory {
       isActive: data.isActive,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
-      consecutiveFailures: data.consecutiveFailures,
-      successRate: data.successRate,
-      totalJobs: data.totalJobs,
-      lastSuccessAt: data.lastSuccessAt,
-      lastFailureAt: data.lastFailureAt,
+      consecutiveFailures: data.healthMetrics.consecutiveFailures,
+      successRate: data.healthMetrics.successRate,
+      totalJobs: data.healthMetrics.totalJobs,
+      lastSuccessAt: data.healthMetrics.lastSuccessAt,
+      lastFailureAt: data.healthMetrics.lastFailureAt,
       version: data.version,
     });
   }

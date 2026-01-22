@@ -180,21 +180,8 @@ export class SourcesController {
       // For now, we're using the repository directly
       const sources = await this.sourceReadRepo.findActive();
 
-      // Map ReadModel to Response (temporary until repository is updated)
-      return sources.map((source) => ({
-        sourceId: source.sourceId,
-        name: source.name,
-        sourceType: source.sourceType,
-        isActive: source.isActive,
-        config: source.config,
-        healthMetrics: {
-          successRate: source.successRate,
-          consecutiveFailures: source.consecutiveFailures,
-          totalJobs: source.totalJobs,
-          lastSuccessAt: source.lastSuccessAt,
-          lastFailureAt: source.lastFailureAt,
-        },
-      }));
+      // Map Response to output format (already has all required fields)
+      return sources;
     } catch (error) {
       this.logger.error(
         `Failed to list sources: ${error instanceof Error ? error.message : 'Unknown error'}`,

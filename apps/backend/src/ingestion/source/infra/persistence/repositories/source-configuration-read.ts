@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { SourceConfigurationReadModel } from '@/ingestion/source/app/queries/read-models/source-configuration';
+import { GetSourceByIdResponse } from '@/ingestion/source/app/queries/get-source-by-id/response';
 import { ISourceConfigurationReadRepository } from '@/ingestion/source/app/queries/repositories/source-configuration-read';
 import { SourceConfigurationEntity } from '../entities/source-configuration';
 
@@ -9,7 +9,10 @@ import { SourceConfigurationEntity } from '../entities/source-configuration';
  * TypeORM SourceConfigurationReadRepository Implementation
  *
  * Implements read operations for querying source configurations using TypeORM and PostgreSQL.
- * Returns read models (plain objects) optimized for queries.
+ * Returns Response types directly - no intermediate ReadModel types.
+ *
+ * Architecture: Repositories return query-specific Response types.
+ * Query handlers return repository results without mapping.
  *
  * Requirements: 5.2
  */
@@ -20,44 +23,28 @@ export class TypeOrmSourceConfigurationReadRepository implements ISourceConfigur
     private readonly repository: Repository<SourceConfigurationEntity>,
   ) {}
 
-  async findById(
-    sourceId: string,
-  ): Promise<SourceConfigurationReadModel | null> {
+  async findById(sourceId: string): Promise<GetSourceByIdResponse | null> {
     const entity = await this.repository.findOne({ where: { sourceId } });
-    return entity ? this.toReadModel(entity) : null;
+    return entity ? this.toResponse(entity) : null;
   }
 
-  async findByIdWithHealth(
-    sourceId: string,
-  ): Promise<SourceConfigurationReadModel | null> {
-    const entity = await this.repository.findOne({ where: { sourceId } });
-    if (!entity) {
-      return null;
-    }
-
-    // Return ReadModel with flat structure (handler will map to Response)
-    return this.toReadModel(entity);
-  }
-
-  async findActive(): Promise<SourceConfigurationReadModel[]> {
+  async findActive(): Promise<GetSourceByIdResponse[]> {
     const entities = await this.repository.find({
       where: { isActive: true },
       order: { createdAt: 'DESC' },
     });
-    return entities.map((e) => this.toReadModel(e));
+    return entities.map((e) => this.toResponse(e));
   }
 
-  async findByType(type: string): Promise<SourceConfigurationReadModel[]> {
+  async findByType(type: string): Promise<GetSourceByIdResponse[]> {
     const entities = await this.repository.find({
       where: { sourceType: type },
       order: { createdAt: 'DESC' },
     });
-    return entities.map((e) => this.toReadModel(e));
+    return entities.map((e) => this.toResponse(e));
   }
 
-  async findUnhealthy(
-    threshold: number,
-  ): Promise<SourceConfigurationReadModel[]> {
+  async findUnhealthy(threshold: number): Promise<GetSourceByIdResponse[]> {
     // Get all sources with consecutive failures >= threshold
     const sources = await this.repository.find({
       where: {
@@ -65,28 +52,27 @@ export class TypeOrmSourceConfigurationReadRepository implements ISourceConfigur
       },
     });
 
-    // Map to SourceConfigurationReadModel (flat structure)
-    return sources.map((source) => this.toReadModel(source));
+    return sources.map((source) => this.toResponse(source));
   }
 
-  private toReadModel(
-    entity: SourceConfigurationEntity,
-  ): SourceConfigurationReadModel {
+  private toResponse(entity: SourceConfigurationEntity): GetSourceByIdResponse {
     return {
       sourceId: entity.sourceId,
-      sourceType: entity.sourceType,
       name: entity.name,
+      sourceType: entity.sourceType,
+      isActive: entity.isActive,
       config: entity.config,
       credentials: entity.credentials,
-      isActive: entity.isActive,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      healthMetrics: {
+        successRate: entity.successRate,
+        consecutiveFailures: entity.consecutiveFailures,
+        totalJobs: entity.totalJobs || 0,
+        lastSuccessAt: entity.lastSuccessAt,
+        lastFailureAt: entity.lastFailureAt,
+      },
       version: entity.version,
-      consecutiveFailures: entity.consecutiveFailures,
-      successRate: entity.successRate,
-      totalJobs: entity.totalJobs || 0, // Default to 0 for backward compatibility
-      lastSuccessAt: entity.lastSuccessAt,
-      lastFailureAt: entity.lastFailureAt,
     };
   }
 }

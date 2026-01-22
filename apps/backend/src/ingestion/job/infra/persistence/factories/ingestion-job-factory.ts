@@ -69,13 +69,13 @@ export class TypeOrmIngestionJobFactory implements IIngestionJobFactory {
       }),
     );
 
-    // Reconstitute metrics
+    // Reconstitute metrics from nested metrics object
     const metrics = JobMetrics.create({
-      itemsCollected: data.itemsCollected,
-      duplicatesDetected: data.duplicatesDetected,
-      errorsEncountered: data.errorsEncountered,
-      bytesProcessed: data.bytesProcessed,
-      durationMs: data.durationMs,
+      itemsCollected: data.metrics.itemsCollected,
+      duplicatesDetected: data.metrics.duplicatesDetected,
+      errorsEncountered: data.metrics.errorsEncountered,
+      bytesProcessed: data.metrics.bytesProcessed,
+      durationMs: data.metrics.durationMs,
     });
 
     // Reconstitute aggregate with version from database
