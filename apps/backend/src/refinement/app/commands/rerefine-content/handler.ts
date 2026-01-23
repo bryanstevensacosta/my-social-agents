@@ -19,14 +19,14 @@ import { SemanticChunker } from '@refinement/domain/services/semantic-chunker';
 /**
  * RerefineContentCommandHandler
  *
- * Handles the RerefineContentCommand to re-refine previously refined content.
- * This creates a new refinement while preserving the history of previous refinements.
+ * Handles the RerefineContentCommand to re-refine previously refined content
+ * with updated configuration or improved algorithms.
  *
  * Process:
- * 1. Load content item from ingestion context
- * 2. Load previous refinement (if exists) to track history
- * 3. Create new ContentRefinement aggregate
- * 4. Record re-refinement reason
+ * 1. Load previous refinement to validate it exists
+ * 2. Validate that content can be re-refined (not already processing)
+ * 3. Load content item from ingestion context
+ * 4. Create new ContentRefinement aggregate with audit trail
  * 5. Chunk content using semantic chunker
  * 6. For each chunk:
  *    - Extract crypto entities
@@ -37,7 +37,7 @@ import { SemanticChunker } from '@refinement/domain/services/semantic-chunker';
  * 8. Save to repository
  * 9. Publish domain events
  *
- * Requirements: Refinement 11
+ * Requirements: Refinement 11, 12
  * Design: Application Layer - Command Handlers
  */
 @Injectable()
@@ -49,10 +49,10 @@ export class RerefineContentCommandHandler implements ICommandHandler<
   private readonly logger = new Logger(RerefineContentCommandHandler.name);
 
   constructor(
-    @Inject('IContentItemFactory')
-    private readonly contentItemFactory: IContentItemFactory,
     @Inject('IContentRefinementFactory')
     private readonly refinementFactory: IContentRefinementFactory,
+    @Inject('IContentItemFactory')
+    private readonly contentItemFactory: IContentItemFactory,
     @Inject('IContentRefinementWriteRepository')
     private readonly writeRepository: IContentRefinementWriteRepository,
     private readonly semanticChunker: SemanticChunker,
@@ -81,56 +81,72 @@ export class RerefineContentCommandHandler implements ICommandHandler<
     );
 
     try {
-      // 1. Load content item from ingestion context
+      // 1. Load previous refinement to validate it exists
+      const previousRefinement =
+        await this.refinementFactory.loadByContentItemId(contentItemId);
+      if (!previousRefinement) {
+        this.logger.warn(
+          `No previous refinement found for content: ${contentItemId}`,
+        );
+        return this.createRejectedResult(
+          this.generateId(),
+          contentItemId,
+          '',
+          reason,
+          'No previous refinement found',
+        );
+      }
+
+      // 2. Validate that previous refinement is not currently processing
+      if (previousRefinement.isProcessing) {
+        this.logger.warn(
+          `Cannot re-refine: previous refinement is still processing: ${previousRefinement.id}`,
+        );
+        return this.createRejectedResult(
+          this.generateId(),
+          contentItemId,
+          previousRefinement.id,
+          reason,
+          'Previous refinement is still processing',
+        );
+      }
+
+      // 3. Load content item from ingestion context
       const contentItem = await this.contentItemFactory.load(contentItemId);
       if (!contentItem) {
         this.logger.warn(`Content item not found: ${contentItemId}`);
         return this.createRejectedResult(
+          this.generateId(),
           contentItemId,
-          contentItemId,
+          previousRefinement.id,
           reason,
           'Content item not found',
         );
       }
 
-      // 2. Load previous refinement to track history
-      let previousRefinementId: string | undefined;
-      try {
-        const previousRefinement =
-          await this.refinementFactory.loadByContentItemId(contentItemId);
-        if (previousRefinement) {
-          previousRefinementId = previousRefinement.id;
-          this.logger.debug(
-            `Found previous refinement: ${previousRefinementId}`,
-          );
-        }
-      } catch {
-        // Previous refinement not found is acceptable for first-time refinement
-        this.logger.debug(`No previous refinement found for ${contentItemId}`);
-      }
-
-      // 3. Validate minimum content length
+      // 4. Validate minimum content length
       if (contentItem.normalizedContent.length < 100) {
         this.logger.warn(
           `Content too short: ${contentItem.normalizedContent.length} characters`,
         );
         return this.createRejectedResult(
+          this.generateId(),
           contentItemId,
-          contentItemId,
+          previousRefinement.id,
           reason,
           'Content too short (minimum 100 characters)',
         );
       }
 
-      // 4. Create new ContentRefinement aggregate
+      // 5. Create new ContentRefinement aggregate
       const refinementId = this.generateId();
       const refinement = ContentRefinement.create(refinementId, contentItemId);
 
-      // 5. Start refinement process
+      // 6. Start refinement process
       refinement.start();
       const startTime = Date.now();
 
-      // 6. Chunk content
+      // 7. Chunk content
       const chunkingConfig = this.buildChunkingConfig(config);
       const chunks = await this.chunkContent(
         refinement,
@@ -138,7 +154,7 @@ export class RerefineContentCommandHandler implements ICommandHandler<
         chunkingConfig,
       );
 
-      // 7. Check if chunking produced too many chunks
+      // 8. Check if chunking produced too many chunks
       if (chunks.length > 100) {
         this.logger.warn(`Too many chunks: ${chunks.length} (maximum 100)`);
         refinement.reject('Too many chunks (maximum 100)');
@@ -148,19 +164,20 @@ export class RerefineContentCommandHandler implements ICommandHandler<
         return this.createRejectedResult(
           refinementId,
           contentItemId,
+          previousRefinement.id,
           reason,
           'Too many chunks (maximum 100)',
         );
       }
 
-      // 8. Process each chunk
+      // 9. Process each chunk
       const processedChunks = await this.processChunks(
         chunks,
         contentItem,
         config,
       );
 
-      // 9. Add chunks to aggregate
+      // 10. Add chunks to aggregate
       for (const chunk of processedChunks) {
         try {
           refinement.addChunk(chunk);
@@ -170,7 +187,7 @@ export class RerefineContentCommandHandler implements ICommandHandler<
         }
       }
 
-      // 10. Check if we have at least one chunk
+      // 11. Check if we have at least one chunk
       if (refinement.chunkCount === 0) {
         this.logger.warn('No valid chunks after processing');
         refinement.reject('No valid chunks after quality filtering');
@@ -180,37 +197,38 @@ export class RerefineContentCommandHandler implements ICommandHandler<
         return this.createRejectedResult(
           refinementId,
           contentItemId,
+          previousRefinement.id,
           reason,
           'No valid chunks after quality filtering',
         );
       }
 
-      // 11. Mark as completed
+      // 12. Mark as completed
       refinement.complete();
       const duration = Date.now() - startTime;
 
-      // 12. Save to repository
+      // 13. Save to repository
       await this.writeRepository.save(refinement);
 
-      // 13. Publish domain events
+      // 14. Publish domain events
       this.publishEvents(refinement);
 
-      // 14. Calculate average quality score
+      // 15. Calculate average quality score
       const averageQuality = this.calculateAverageQuality(processedChunks);
 
       this.logger.log(
-        `Re-refinement completed: ${refinementId} (${refinement.chunkCount} chunks, ${duration}ms)`,
+        `Re-refinement completed: ${refinementId} (${refinement.chunkCount} chunks, ${duration}ms), previous: ${previousRefinement.id}`,
       );
 
       return {
         refinementId,
         contentItemId,
+        previousRefinementId: previousRefinement.id,
         reason,
         status: 'completed',
         chunkCount: refinement.chunkCount,
         durationMs: duration,
         averageQualityScore: averageQuality,
-        previousRefinementId,
       };
     } catch (error) {
       this.logger.error(
@@ -221,6 +239,7 @@ export class RerefineContentCommandHandler implements ICommandHandler<
       return this.createFailedResult(
         contentItemId,
         contentItemId,
+        '',
         reason,
         error instanceof Error ? error : new Error(String(error)),
       );
@@ -361,12 +380,14 @@ export class RerefineContentCommandHandler implements ICommandHandler<
   private createRejectedResult(
     refinementId: string,
     contentItemId: string,
+    previousRefinementId: string,
     reason: string,
     rejectionReason: string,
   ): RerefineContentResult {
     return {
       refinementId,
       contentItemId,
+      previousRefinementId,
       reason,
       status: 'rejected',
       rejectionReason,
@@ -379,16 +400,18 @@ export class RerefineContentCommandHandler implements ICommandHandler<
   private createFailedResult(
     refinementId: string,
     contentItemId: string,
+    previousRefinementId: string,
     reason: string,
     error: Error,
   ): RerefineContentResult {
     return {
       refinementId,
       contentItemId,
+      previousRefinementId,
       reason,
       status: 'failed',
       error: {
-        code: 'REFINEMENT_ERROR',
+        code: 'REREFINEMENT_ERROR',
         message: error.message,
       },
     };

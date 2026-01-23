@@ -35,6 +35,7 @@ export const AppDataSource = new DataSource({
   migrations: [
     // Migration files organized by bounded context
     'src/ingestion/migrations/*.ts',
+    'src/refinement/migrations/*.ts',
     // Future bounded contexts will add their migrations here:
     // 'src/processing/migrations/*.ts',
     // 'src/retrieval/migrations/*.ts',

@@ -38,6 +38,8 @@
     "migration:show": "typeorm-ts-node-commonjs migration:show -d src/data-source.ts"
   },
   "dependencies": {
+    "@langchain/core": "^1.1.16",
+    "@langchain/textsplitters": "^1.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -53,6 +55,7 @@
     "chalk": "^4.1.2",
     "chalk-animation": "^2.0.3",
     "cheerio": "^1.1.2",
+    "chrono-node": "^2.9.0",
     "clear": "^0.1.0",
     "cli-cursor": "^5.0.0",
     "dotenv": "^16.6.1",
