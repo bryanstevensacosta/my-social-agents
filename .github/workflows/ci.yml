@@ -22,7 +22,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Full history for better analysis
-          submodules: recursive # Fetch git submodules (e.g., Firecrawl)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -54,8 +53,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -83,8 +80,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -117,8 +112,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -146,8 +139,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -183,7 +174,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Full history for secret scanning
-          submodules: recursive
 
       - name: TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
@@ -217,8 +207,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive # Fetch git submodules (e.g., Firecrawl)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -345,8 +333,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive # Fetch git submodules (e.g., Firecrawl)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -382,8 +368,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive # Fetch git submodules (e.g., Firecrawl)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
