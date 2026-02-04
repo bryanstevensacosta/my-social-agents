@@ -90,6 +90,12 @@ export class ContentRefinementReadRepository implements IContentRefinementReadRe
         order: { createdAt: 'DESC' },
       });
 
+      // Handle case where find() returns undefined or null
+      if (!entities) {
+        this.logger.debug(`No refinements found for content: ${contentItemId}`);
+        return [];
+      }
+
       return entities.map((entity) =>
         this.toGetContentRefinementResult(entity),
       );
@@ -119,6 +125,12 @@ export class ContentRefinementReadRepository implements IContentRefinementReadRe
         relations: ['chunks'],
         order: { createdAt: 'DESC' },
       });
+
+      // Handle case where find() returns undefined or null
+      if (!entities) {
+        this.logger.debug(`No refinements found with status: ${status}`);
+        return [];
+      }
 
       return entities.map((entity) =>
         this.toGetContentRefinementResult(entity),
