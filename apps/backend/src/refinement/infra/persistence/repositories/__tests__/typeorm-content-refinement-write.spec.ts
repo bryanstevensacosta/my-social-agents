@@ -28,7 +28,7 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
 
       const savedEntity = new ContentRefinementEntity();
       savedEntity.id = 'ref-1';
-      savedEntity.version = 1;
+      savedEntity.version = 0; // New aggregate starts at version 0
 
       mockTypeOrmRepo.findOne.mockResolvedValue(null); // Not exists
       mockTypeOrmRepo.save.mockResolvedValue(savedEntity);
@@ -47,11 +47,11 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
 
       const existingEntity = new ContentRefinementEntity();
       existingEntity.id = 'ref-1';
-      existingEntity.version = 1;
+      existingEntity.version = 0; // Match aggregate's current version
 
       const savedEntity = new ContentRefinementEntity();
       savedEntity.id = 'ref-1';
-      savedEntity.version = 2;
+      existingEntity.version = 1; // After increment
 
       mockTypeOrmRepo.findOne.mockResolvedValue(existingEntity);
       mockTypeOrmRepo.save.mockResolvedValue(savedEntity);
@@ -67,7 +67,7 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
 
       const existingEntity = new ContentRefinementEntity();
       existingEntity.id = 'ref-1';
-      existingEntity.version = 2; // Different version
+      existingEntity.version = 5; // Different version (concurrent modification)
 
       mockTypeOrmRepo.findOne.mockResolvedValue(existingEntity);
 
@@ -80,6 +80,7 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
       const aggregate = ContentRefinement.create('ref-1', 'content-1');
       aggregate.start();
 
+      // Mock as new aggregate (no existing entity)
       mockTypeOrmRepo.findOne.mockResolvedValue(null);
       mockTypeOrmRepo.save.mockResolvedValue(new ContentRefinementEntity());
 
@@ -106,6 +107,7 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
       });
       aggregate.addChunk(chunk);
 
+      // Mock as new aggregate
       mockTypeOrmRepo.findOne.mockResolvedValue(null);
       mockTypeOrmRepo.save.mockResolvedValue(new ContentRefinementEntity());
 
@@ -135,15 +137,15 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
 
       const existingEntity = new ContentRefinementEntity();
       existingEntity.id = 'ref-1';
-      existingEntity.version = 1;
+      existingEntity.version = 0; // Existing version
 
-      mockTypeOrmRepo.findOne.mockResolvedValue(existingEntity);
+      mockTypeOrmRepo.findOne.mockResolvedValue(null); // New aggregate
       mockTypeOrmRepo.save.mockResolvedValue(new ContentRefinementEntity());
 
       await repository.save(aggregate);
 
       const savedArg = mockTypeOrmRepo.save.mock.calls[0][0];
-      expect(savedArg.version).toBe(1); // New aggregate starts at version 1
+      expect(savedArg.version).toBe(0); // New aggregate starts at version 0
     });
 
     it('should handle save errors', async () => {
@@ -173,6 +175,7 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
       aggregate.addChunk(chunk);
       aggregate.complete();
 
+      // Mock as new aggregate
       mockTypeOrmRepo.findOne.mockResolvedValue(null);
       mockTypeOrmRepo.save.mockResolvedValue(new ContentRefinementEntity());
 
@@ -191,6 +194,7 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
       const error = RefinementError.create('Error details', 'Test error');
       aggregate.fail(error);
 
+      // Mock as new aggregate
       mockTypeOrmRepo.findOne.mockResolvedValue(null);
       mockTypeOrmRepo.save.mockResolvedValue(new ContentRefinementEntity());
 

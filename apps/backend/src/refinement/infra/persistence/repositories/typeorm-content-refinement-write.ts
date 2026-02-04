@@ -39,30 +39,30 @@ export class TypeOrmContentRefinementWriteRepository implements IContentRefineme
    * @throws ConcurrencyException if optimistic locking fails
    */
   async save(refinement: ContentRefinement): Promise<void> {
-    this.logger.debug(`Saving refinement: ${refinement.id}`);
+    this.logger.debug(
+      `Saving refinement: ${refinement.id}, version: ${refinement.version.value}`,
+    );
 
     try {
       // Map aggregate to entity
       const entity = this.toEntity(refinement);
 
-      // Check if this is a new aggregate (version = 0)
-      if (refinement.version.value === 0) {
-        // Insert new aggregate using save() instead of insert()
-        // save() handles entity relationships better than insert()
-        await this.refinementRepository.save(entity);
-        this.logger.debug(`New refinement inserted: ${refinement.id}`);
-        return;
-      }
-
-      // For existing aggregates, check version for optimistic locking
+      // Try to find existing entity
       const existingEntity = await this.refinementRepository.findOne({
         where: { id: refinement.id },
       });
 
+      // If no existing entity, this is an INSERT (regardless of version)
       if (!existingEntity) {
-        throw new Error(`Refinement ${refinement.id} not found`);
+        // Insert new aggregate
+        const savedEntity = await this.refinementRepository.save(entity);
+        this.logger.debug(
+          `New refinement inserted: ${savedEntity.id}, version: ${savedEntity.version}`,
+        );
+        return;
       }
 
+      // Existing entity found - this is an UPDATE with optimistic locking
       // Check version mismatch (concurrent modification)
       if (existingEntity.version !== refinement.version.value - 1) {
         const ConcurrencyException = class extends Error {
@@ -80,7 +80,7 @@ export class TypeOrmContentRefinementWriteRepository implements IContentRefineme
       // Save with updated version
       await this.refinementRepository.save(entity);
 
-      this.logger.debug(`Refinement saved successfully: ${refinement.id}`);
+      this.logger.debug(`Refinement updated successfully: ${refinement.id}`);
     } catch (error) {
       this.logger.error(
         `Failed to save refinement ${refinement.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,

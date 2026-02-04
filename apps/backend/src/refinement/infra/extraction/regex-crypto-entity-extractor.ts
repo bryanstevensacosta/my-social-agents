@@ -56,6 +56,9 @@ export class RegexCryptoEntityExtractor implements IEntityExtractor {
     'ICP',
     'INJ',
     'STX',
+    'DAI',
+    'AAVE',
+    'COMP',
   ]);
 
   // Known crypto full names (lowercase for case-insensitive matching)

@@ -279,7 +279,9 @@ export class ContentRefinementReadRepository implements IContentRefinementReadRe
 
     const metadata: ChunkMetadataResult = {
       entities,
-      qualityScore: chunk.qualityScore ?? 0,
+      qualityScore: chunk.qualityScore
+        ? parseFloat(String(chunk.qualityScore))
+        : 0,
       temporalContext,
     };
 
@@ -324,7 +326,9 @@ export class ContentRefinementReadRepository implements IContentRefinementReadRe
 
     const metadata: ChunkMetadataResult = {
       entities,
-      qualityScore: chunk.qualityScore ?? 0,
+      qualityScore: chunk.qualityScore
+        ? parseFloat(String(chunk.qualityScore))
+        : 0,
       temporalContext,
     };
 

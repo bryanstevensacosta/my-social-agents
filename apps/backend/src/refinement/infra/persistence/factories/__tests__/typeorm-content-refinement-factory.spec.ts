@@ -28,6 +28,7 @@ describe('TypeOrmContentRefinementFactory', () => {
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
       entity.refinedAt = null; // Not completed yet
       entity.error = null;
+      entity.config = null;
 
       mockRepository.findOne.mockResolvedValue(entity);
 
@@ -51,12 +52,25 @@ describe('TypeOrmContentRefinementFactory', () => {
       entity.id = 'ref-1';
       entity.contentItemId = 'content-1';
       entity.status = 'completed';
-      entity.chunks = [];
+
+      // Add at least one chunk (required for completed status)
+      const chunk = new ChunkEntity();
+      chunk.id = 'chunk-1';
+      chunk.refinementId = 'ref-1';
+      chunk.content = 'Test chunk content';
+      chunk.hash = 'a'.repeat(64); // Valid 64-char hex hash
+      chunk.position = 0;
+      chunk.entities = [];
+      chunk.temporalContext = null;
+      chunk.qualityScore = 0.8;
+
+      entity.chunks = [chunk];
       entity.version = 1;
       entity.createdAt = new Date('2024-01-20T00:00:00Z');
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
       entity.refinedAt = new Date('2024-01-20T00:00:00Z');
       entity.error = null;
+      entity.config = null;
 
       mockRepository.findOne.mockResolvedValue(entity);
 
@@ -69,15 +83,23 @@ describe('TypeOrmContentRefinementFactory', () => {
     it('should link chunks correctly (previous/next)', async () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
+      chunk1.refinementId = 'ref-1';
       chunk1.content = 'First chunk.';
-      chunk1.hash = 'hash-1';
+      chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
+      chunk1.entities = [];
+      chunk1.temporalContext = null;
+      chunk1.qualityScore = 0.8;
 
       const chunk2 = new ChunkEntity();
       chunk2.id = 'chunk-2';
+      chunk2.refinementId = 'ref-1';
       chunk2.content = 'Second chunk.';
-      chunk2.hash = 'hash-2';
+      chunk2.hash = 'b'.repeat(64); // Valid 64-char hex hash
       chunk2.position = 1;
+      chunk2.entities = [];
+      chunk2.temporalContext = null;
+      chunk2.qualityScore = 0.8;
 
       const entity = new ContentRefinementEntity();
       entity.id = 'ref-1';
@@ -89,6 +111,7 @@ describe('TypeOrmContentRefinementFactory', () => {
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
       entity.refinedAt = new Date('2024-01-20T00:00:00Z');
       entity.error = null;
+      entity.config = null;
 
       mockRepository.findOne.mockResolvedValue(entity);
 
@@ -101,10 +124,13 @@ describe('TypeOrmContentRefinementFactory', () => {
     it('should reconstitute crypto entities', async () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
+      chunk1.refinementId = 'ref-1';
       chunk1.content = 'Bitcoin analysis.';
-      chunk1.hash = 'hash-1';
+      chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
       chunk1.entities = [{ type: 'token', symbol: 'BTC', confidence: 0.95 }];
+      chunk1.temporalContext = null;
+      chunk1.qualityScore = 0.8;
 
       const entity = new ContentRefinementEntity();
       entity.id = 'ref-1';
@@ -116,6 +142,7 @@ describe('TypeOrmContentRefinementFactory', () => {
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
       entity.refinedAt = new Date('2024-01-20T00:00:00Z');
       entity.error = null;
+      entity.config = null;
 
       mockRepository.findOne.mockResolvedValue(entity);
 
@@ -130,14 +157,17 @@ describe('TypeOrmContentRefinementFactory', () => {
     it('should reconstitute temporal contexts', async () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
+      chunk1.refinementId = 'ref-1';
       chunk1.content = 'Bitcoin on January 15, 2024.';
-      chunk1.hash = 'hash-1';
+      chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
+      chunk1.entities = [];
       chunk1.temporalContext = {
         referenceDate: new Date('2024-01-15T00:00:00Z').toISOString(),
         timeframe: 'past',
         confidence: 0.9,
       };
+      chunk1.qualityScore = 0.8;
 
       const entity = new ContentRefinementEntity();
       entity.id = 'ref-1';
@@ -149,6 +179,7 @@ describe('TypeOrmContentRefinementFactory', () => {
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
       entity.refinedAt = new Date('2024-01-20T00:00:00Z');
       entity.error = null;
+      entity.config = null;
 
       mockRepository.findOne.mockResolvedValue(entity);
 
@@ -161,9 +192,12 @@ describe('TypeOrmContentRefinementFactory', () => {
     it('should reconstitute quality score', async () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
+      chunk1.refinementId = 'ref-1';
       chunk1.content = 'Bitcoin analysis.';
-      chunk1.hash = 'hash-1';
+      chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
+      chunk1.entities = [];
+      chunk1.temporalContext = null;
       chunk1.qualityScore = 0.85;
 
       const entity = new ContentRefinementEntity();
@@ -176,6 +210,7 @@ describe('TypeOrmContentRefinementFactory', () => {
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
       entity.refinedAt = new Date('2024-01-20T00:00:00Z');
       entity.error = null;
+      entity.config = null;
 
       mockRepository.findOne.mockResolvedValue(entity);
 
@@ -217,16 +252,27 @@ describe('TypeOrmContentRefinementFactory', () => {
     });
 
     it('should preserve version number', async () => {
+      const chunk = new ChunkEntity();
+      chunk.id = 'chunk-1';
+      chunk.refinementId = 'ref-1';
+      chunk.content = 'Test chunk';
+      chunk.hash = 'a'.repeat(64); // Valid 64-char hex hash
+      chunk.position = 0;
+      chunk.entities = [];
+      chunk.temporalContext = null;
+      chunk.qualityScore = 0.8;
+
       const entity = new ContentRefinementEntity();
       entity.id = 'ref-1';
       entity.contentItemId = 'content-1';
       entity.status = 'completed';
-      entity.chunks = [];
+      entity.chunks = [chunk]; // Add chunk for completed status
       entity.version = 5;
       entity.createdAt = new Date('2024-01-20T00:00:00Z');
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
       entity.refinedAt = new Date('2024-01-20T00:00:00Z');
       entity.error = null;
+      entity.config = null;
 
       mockRepository.findOne.mockResolvedValue(entity);
 
