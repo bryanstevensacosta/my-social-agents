@@ -1,4 +1,4 @@
-import { ValueObject } from '@/shared/kernel';
+import { ValueObject } from '@/shared/domain';
 
 /**
  * IngestionStatus Value Object

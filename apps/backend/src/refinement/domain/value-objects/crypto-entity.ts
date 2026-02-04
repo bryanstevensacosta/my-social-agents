@@ -1,4 +1,4 @@
-import { ValueObject } from '@/shared/kernel';
+import { ValueObject } from '@/shared/domain';
 import { CryptoEntityType } from '@refinement/domain/value-objects/crypto-entity-type';
 
 /**

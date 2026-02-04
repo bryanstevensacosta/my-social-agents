@@ -1,10 +1,10 @@
 import * as fc from 'fast-check';
 import { ContentHashGenerator } from '../content-hash-generator';
 import { ContentHash } from '@/ingestion/content/domain/value-objects/content-hash';
-import { IHashService } from '@/shared/interfaces';
+import { IHashing } from '@/shared/domain/interfaces/crypto';
 
 describe('ContentHashGenerator', () => {
-  let mockHash: IHashService;
+  let mockHash: IHashing;
   let generator: ContentHashGenerator;
 
   beforeEach(() => {
@@ -201,7 +201,7 @@ describe('ContentHashGenerator', () => {
       it('should work with different Hash implementations', () => {
         // Create a different mock implementation
         const sha256Mock = jest.fn(() => '1'.repeat(64));
-        const alternativeHash: IHashService = {
+        const alternativeHash: IHashing = {
           sha256: sha256Mock,
         };
 
@@ -214,7 +214,7 @@ describe('ContentHashGenerator', () => {
       });
 
       it('should propagate errors from hash implementation', () => {
-        const errorHash: IHashService = {
+        const errorHash: IHashing = {
           sha256: jest.fn(() => {
             throw new Error('Hash computation failed');
           }),
@@ -229,7 +229,7 @@ describe('ContentHashGenerator', () => {
 
       it('should handle hash implementation returning invalid format', () => {
         const sha256Mock = jest.fn(() => 'invalid');
-        const invalidHash: IHashService = {
+        const invalidHash: IHashing = {
           sha256: sha256Mock,
         };
 

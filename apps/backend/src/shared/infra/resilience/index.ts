@@ -14,4 +14,4 @@ export {
   CircuitBreakerOptions,
   CircuitBreakerStats,
   CircuitState,
-} from '@/shared/interfaces';
+} from '@/shared/domain/interfaces/resilience';

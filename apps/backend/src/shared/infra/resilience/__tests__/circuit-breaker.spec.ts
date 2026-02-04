@@ -1,6 +1,6 @@
 import * as fc from 'fast-check';
 import { CircuitBreakerService } from '../circuit-breaker';
-import { CircuitState } from '@/shared/interfaces';
+import { CircuitState } from '@/shared/domain/interfaces/resilience';
 
 describe('CircuitBreakerService', () => {
   describe('Unit Tests', () => {

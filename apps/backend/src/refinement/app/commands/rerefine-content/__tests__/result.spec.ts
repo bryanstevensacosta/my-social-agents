@@ -1,354 +1,212 @@
-import {
-  RerefineContentResult,
-  RerefineContentCompletedResult,
-  RerefineContentRejectedResult,
-  RerefineContentFailedResult,
-} from '../result';
+import { RerefineContentResult } from '../result';
 
 describe('RerefineContentResult', () => {
-  describe('completed result', () => {
-    it('should create completed result with all properties', () => {
-      const result: RerefineContentCompletedResult = {
-        status: 'completed',
+  describe('completed status', () => {
+    it('should have all required properties for completed status', () => {
+      const result: RerefineContentResult = {
         refinementId: 'refinement-456',
         contentItemId: 'content-123',
-        reason: 'Algorithm update',
-        chunkCount: 5,
-        durationMs: 1500,
-        averageQualityScore: 0.85,
         previousRefinementId: 'refinement-123',
+        reason: 'Updated configuration',
+        status: 'completed',
+        chunkCount: 15,
+        durationMs: 2500,
+        averageQualityScore: 0.85,
       };
 
-      expect(result.status).toBe('completed');
       expect(result.refinementId).toBe('refinement-456');
       expect(result.contentItemId).toBe('content-123');
-      expect(result.reason).toBe('Algorithm update');
-      expect(result.chunkCount).toBe(5);
-      expect(result.durationMs).toBe(1500);
-      expect(result.averageQualityScore).toBe(0.85);
       expect(result.previousRefinementId).toBe('refinement-123');
+      expect(result.reason).toBe('Updated configuration');
+      expect(result.status).toBe('completed');
+      expect(result.chunkCount).toBe(15);
+      expect(result.durationMs).toBe(2500);
+      expect(result.averageQualityScore).toBe(0.85);
+      expect(result.error).toBeUndefined();
+      expect(result.rejectionReason).toBeUndefined();
     });
 
-    it('should create completed result without previous refinement ID', () => {
-      const result: RerefineContentCompletedResult = {
-        status: 'completed',
+    it('should support zero duration for very fast re-refinement', () => {
+      const result: RerefineContentResult = {
         refinementId: 'refinement-456',
         contentItemId: 'content-123',
-        reason: 'Manual reprocessing',
-        chunkCount: 3,
-        durationMs: 1000,
-        averageQualityScore: 0.75,
+        previousRefinementId: 'refinement-123',
+        reason: 'Quick update',
+        status: 'completed',
+        chunkCount: 5,
+        durationMs: 0,
+        averageQualityScore: 0.9,
       };
 
-      expect(result.previousRefinementId).toBeUndefined();
+      expect(result.durationMs).toBe(0);
     });
 
-    it('should handle zero chunks', () => {
-      const result: RerefineContentCompletedResult = {
-        status: 'completed',
+    it('should support perfect quality score', () => {
+      const result: RerefineContentResult = {
         refinementId: 'refinement-456',
         contentItemId: 'content-123',
-        reason: 'Test',
-        chunkCount: 0,
-        durationMs: 100,
-        averageQualityScore: 0,
-      };
-
-      expect(result.chunkCount).toBe(0);
-      expect(result.averageQualityScore).toBe(0);
-    });
-
-    it('should handle high quality scores', () => {
-      const result: RerefineContentCompletedResult = {
+        previousRefinementId: 'refinement-123',
+        reason: 'High quality content',
         status: 'completed',
-        refinementId: 'refinement-456',
-        contentItemId: 'content-123',
-        reason: 'Test',
         chunkCount: 10,
-        durationMs: 2000,
-        averageQualityScore: 0.95,
+        averageQualityScore: 1.0,
       };
 
-      expect(result.averageQualityScore).toBe(0.95);
+      expect(result.averageQualityScore).toBe(1.0);
     });
   });
 
-  describe('rejected result', () => {
-    it('should create rejected result with all properties', () => {
-      const result: RerefineContentRejectedResult = {
-        status: 'rejected',
+  describe('failed status', () => {
+    it('should have error information for failed status', () => {
+      const result: RerefineContentResult = {
         refinementId: 'refinement-456',
         contentItemId: 'content-123',
-        reason: 'Quality check',
-        rejectionReason: 'Content too short',
-      };
-
-      expect(result.status).toBe('rejected');
-      expect(result.refinementId).toBe('refinement-456');
-      expect(result.contentItemId).toBe('content-123');
-      expect(result.reason).toBe('Quality check');
-      expect(result.rejectionReason).toBe('Content too short');
-    });
-
-    it('should handle various rejection reasons', () => {
-      const reasons = [
-        'Content too short',
-        'Too many chunks',
-        'No valid chunks after quality filtering',
-        'Content item not found',
-      ];
-
-      reasons.forEach((rejectionReason) => {
-        const result: RerefineContentRejectedResult = {
-          status: 'rejected',
-          refinementId: 'refinement-456',
-          contentItemId: 'content-123',
-          reason: 'Test',
-          rejectionReason,
-        };
-
-        expect(result.rejectionReason).toBe(rejectionReason);
-      });
-    });
-  });
-
-  describe('failed result', () => {
-    it('should create failed result with all properties', () => {
-      const result: RerefineContentFailedResult = {
-        status: 'failed',
-        refinementId: 'refinement-456',
-        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-123',
         reason: 'Retry after failure',
+        status: 'failed',
+        durationMs: 1500,
         error: {
-          code: 'REFINEMENT_ERROR',
-          message: 'Chunking failed',
+          code: 'CHUNKING_ERROR',
+          message: 'Failed to chunk content: Invalid format',
         },
       };
 
       expect(result.status).toBe('failed');
-      expect(result.refinementId).toBe('refinement-456');
-      expect(result.contentItemId).toBe('content-123');
-      expect(result.reason).toBe('Retry after failure');
-      expect(result.error.code).toBe('REFINEMENT_ERROR');
-      expect(result.error.message).toBe('Chunking failed');
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe('CHUNKING_ERROR');
+      expect(result.error?.message).toContain('Failed to chunk');
+      expect(result.chunkCount).toBeUndefined();
+      expect(result.averageQualityScore).toBeUndefined();
+      expect(result.rejectionReason).toBeUndefined();
     });
 
-    it('should handle various error codes', () => {
-      const errorCodes = [
-        'REFINEMENT_ERROR',
-        'DATABASE_ERROR',
-        'NETWORK_ERROR',
-        'VALIDATION_ERROR',
-      ];
+    it('should support long error messages', () => {
+      const longMessage = 'Error: ' + 'a'.repeat(500);
 
-      errorCodes.forEach((code) => {
-        const result: RerefineContentFailedResult = {
-          status: 'failed',
-          refinementId: 'refinement-456',
-          contentItemId: 'content-123',
-          reason: 'Test',
-          error: {
-            code,
-            message: 'Test error',
-          },
-        };
-
-        expect(result.error.code).toBe(code);
-      });
-    });
-  });
-
-  describe('type discrimination', () => {
-    it('should discriminate completed result by status', () => {
       const result: RerefineContentResult = {
-        status: 'completed',
         refinementId: 'refinement-456',
         contentItemId: 'content-123',
-        reason: 'Test',
-        chunkCount: 5,
-        durationMs: 1000,
-        averageQualityScore: 0.8,
-      };
-
-      if (result.status === 'completed') {
-        expect(result.chunkCount).toBe(5);
-        expect(result.durationMs).toBe(1000);
-        expect(result.averageQualityScore).toBe(0.8);
-      }
-    });
-
-    it('should discriminate rejected result by status', () => {
-      const result: RerefineContentResult = {
-        status: 'rejected',
-        refinementId: 'refinement-456',
-        contentItemId: 'content-123',
-        reason: 'Test',
-        rejectionReason: 'Too short',
-      };
-
-      if (result.status === 'rejected') {
-        expect(result.rejectionReason).toBe('Too short');
-      }
-    });
-
-    it('should discriminate failed result by status', () => {
-      const result: RerefineContentResult = {
+        previousRefinementId: 'refinement-123',
+        reason: 'Retry',
         status: 'failed',
-        refinementId: 'refinement-456',
-        contentItemId: 'content-123',
-        reason: 'Test',
         error: {
-          code: 'ERROR',
-          message: 'Failed',
+          code: 'INTERNAL_ERROR',
+          message: longMessage,
         },
       };
 
-      if (result.status === 'failed') {
-        expect(result.error.code).toBe('ERROR');
-        expect(result.error.message).toBe('Failed');
-      }
+      expect(result.error?.message.length).toBeGreaterThan(500);
     });
   });
 
-  describe('result handling patterns', () => {
-    it('should handle result with switch statement', () => {
-      const results: RerefineContentResult[] = [
-        {
-          status: 'completed',
-          refinementId: 'ref-1',
-          contentItemId: 'content-1',
-          reason: 'Test',
-          chunkCount: 5,
-          durationMs: 1000,
-          averageQualityScore: 0.8,
-        },
-        {
-          status: 'rejected',
-          refinementId: 'ref-2',
-          contentItemId: 'content-2',
-          reason: 'Test',
-          rejectionReason: 'Too short',
-        },
-        {
-          status: 'failed',
-          refinementId: 'ref-3',
-          contentItemId: 'content-3',
-          reason: 'Test',
-          error: { code: 'ERROR', message: 'Failed' },
-        },
-      ];
-
-      results.forEach((result) => {
-        switch (result.status) {
-          case 'completed':
-            expect(result.chunkCount).toBeGreaterThanOrEqual(0);
-            break;
-          case 'rejected':
-            expect(result.rejectionReason).toBeTruthy();
-            break;
-          case 'failed':
-            expect(result.error).toBeTruthy();
-            break;
-        }
-      });
-    });
-  });
-
-  describe('common properties', () => {
-    it('should have refinementId in all result types', () => {
-      const completed: RerefineContentResult = {
-        status: 'completed',
-        refinementId: 'ref-1',
-        contentItemId: 'content-1',
-        reason: 'Test',
-        chunkCount: 5,
-        durationMs: 1000,
-        averageQualityScore: 0.8,
-      };
-
-      const rejected: RerefineContentResult = {
+  describe('rejected status', () => {
+    it('should have rejection reason for rejected status', () => {
+      const result: RerefineContentResult = {
+        refinementId: 'refinement-456',
+        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-123',
+        reason: 'Quality improvement attempt',
         status: 'rejected',
-        refinementId: 'ref-2',
-        contentItemId: 'content-2',
-        reason: 'Test',
-        rejectionReason: 'Too short',
+        rejectionReason: 'Content quality below threshold (0.25 < 0.3)',
       };
 
-      const failed: RerefineContentResult = {
-        status: 'failed',
-        refinementId: 'ref-3',
-        contentItemId: 'content-3',
-        reason: 'Test',
-        error: { code: 'ERROR', message: 'Failed' },
-      };
-
-      expect(completed.refinementId).toBe('ref-1');
-      expect(rejected.refinementId).toBe('ref-2');
-      expect(failed.refinementId).toBe('ref-3');
+      expect(result.status).toBe('rejected');
+      expect(result.rejectionReason).toBeDefined();
+      expect(result.rejectionReason).toContain('quality below threshold');
+      expect(result.chunkCount).toBeUndefined();
+      expect(result.averageQualityScore).toBeUndefined();
+      expect(result.error).toBeUndefined();
     });
 
-    it('should have contentItemId in all result types', () => {
-      const completed: RerefineContentResult = {
-        status: 'completed',
-        refinementId: 'ref-1',
-        contentItemId: 'content-1',
-        reason: 'Test',
-        chunkCount: 5,
-        durationMs: 1000,
-        averageQualityScore: 0.8,
-      };
+    it('should support long rejection reasons', () => {
+      const longReason = 'Rejected because: ' + 'a'.repeat(500);
 
-      const rejected: RerefineContentResult = {
-        status: 'rejected',
-        refinementId: 'ref-2',
-        contentItemId: 'content-2',
-        reason: 'Test',
-        rejectionReason: 'Too short',
-      };
-
-      const failed: RerefineContentResult = {
-        status: 'failed',
-        refinementId: 'ref-3',
-        contentItemId: 'content-3',
-        reason: 'Test',
-        error: { code: 'ERROR', message: 'Failed' },
-      };
-
-      expect(completed.contentItemId).toBe('content-1');
-      expect(rejected.contentItemId).toBe('content-2');
-      expect(failed.contentItemId).toBe('content-3');
-    });
-
-    it('should have reason in all result types', () => {
-      const completed: RerefineContentResult = {
-        status: 'completed',
-        refinementId: 'ref-1',
-        contentItemId: 'content-1',
-        reason: 'Algorithm update',
-        chunkCount: 5,
-        durationMs: 1000,
-        averageQualityScore: 0.8,
-      };
-
-      const rejected: RerefineContentResult = {
-        status: 'rejected',
-        refinementId: 'ref-2',
-        contentItemId: 'content-2',
+      const result: RerefineContentResult = {
+        refinementId: 'refinement-456',
+        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-123',
         reason: 'Quality check',
-        rejectionReason: 'Too short',
+        status: 'rejected',
+        rejectionReason: longReason,
       };
 
-      const failed: RerefineContentResult = {
-        status: 'failed',
-        refinementId: 'ref-3',
-        contentItemId: 'content-3',
-        reason: 'Retry after failure',
-        error: { code: 'ERROR', message: 'Failed' },
+      expect(result.rejectionReason?.length).toBeGreaterThan(500);
+    });
+  });
+
+  describe('audit trail', () => {
+    it('should preserve previous refinement ID for audit trail', () => {
+      const result: RerefineContentResult = {
+        refinementId: 'refinement-new',
+        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-old',
+        reason: 'Configuration update',
+        status: 'completed',
+        chunkCount: 10,
       };
 
-      expect(completed.reason).toBe('Algorithm update');
-      expect(rejected.reason).toBe('Quality check');
-      expect(failed.reason).toBe('Retry after failure');
+      expect(result.previousRefinementId).toBe('refinement-old');
+      expect(result.refinementId).not.toBe(result.previousRefinementId);
+    });
+
+    it('should preserve reason for audit trail', () => {
+      const reason = 'Updated chunk size from 800 to 1000 tokens';
+
+      const result: RerefineContentResult = {
+        refinementId: 'refinement-456',
+        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-123',
+        reason,
+        status: 'completed',
+        chunkCount: 12,
+      };
+
+      expect(result.reason).toBe(reason);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle single chunk result', () => {
+      const result: RerefineContentResult = {
+        refinementId: 'refinement-456',
+        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-123',
+        reason: 'Small content',
+        status: 'completed',
+        chunkCount: 1,
+        averageQualityScore: 0.95,
+      };
+
+      expect(result.chunkCount).toBe(1);
+    });
+
+    it('should handle very large chunk count', () => {
+      const result: RerefineContentResult = {
+        refinementId: 'refinement-456',
+        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-123',
+        reason: 'Large document',
+        status: 'completed',
+        chunkCount: 100,
+        averageQualityScore: 0.75,
+      };
+
+      expect(result.chunkCount).toBe(100);
+    });
+
+    it('should handle very long duration', () => {
+      const result: RerefineContentResult = {
+        refinementId: 'refinement-456',
+        contentItemId: 'content-123',
+        previousRefinementId: 'refinement-123',
+        reason: 'Complex processing',
+        status: 'completed',
+        chunkCount: 50,
+        durationMs: 60000, // 1 minute
+        averageQualityScore: 0.8,
+      };
+
+      expect(result.durationMs).toBe(60000);
     });
   });
 });

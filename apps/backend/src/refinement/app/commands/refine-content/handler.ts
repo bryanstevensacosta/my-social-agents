@@ -1,5 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler, EventBus } from '@nestjs/cqrs';
+import { v4 as uuidv4 } from 'uuid';
 import { RefineContentCommand } from '@refinement/app/commands/refine-content/command';
 import { RefineContentResult } from '@refinement/app/commands/refine-content/result';
 import { ContentRefinement } from '@refinement/domain/aggregates/content-refinement';
@@ -320,7 +321,8 @@ export class RefineContentCommandHandler implements ICommandHandler<
    * Generates a unique ID for refinement
    */
   private generateId(): string {
-    return `refinement-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    // Generate proper UUID for database compatibility
+    return uuidv4();
   }
 
   /**

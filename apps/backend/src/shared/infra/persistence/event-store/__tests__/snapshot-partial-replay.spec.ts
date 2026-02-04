@@ -1,8 +1,8 @@
 import * as fc from 'fast-check';
-import { EventSourcedAggregate } from '@/shared/event-sourcing/event-sourced-aggregate';
-import { DomainEvent } from '@/shared/event-sourcing/event-store';
-import { Snapshot } from '@/shared/event-sourcing/snapshot-store';
-import { AggregateVersion } from '@/shared/kernel';
+import { EventSourcedAggregate } from '@/shared/domain/interfaces/event-sourcing/event-sourced-aggregate';
+import { DomainEvent } from '@/shared/domain/interfaces/event-sourcing/event-store';
+import { Snapshot } from '@/shared/domain/interfaces/event-sourcing/snapshot-store';
+import { AggregateVersion } from '@/shared/domain';
 
 /**
  * Test Domain Events for snapshot property testing

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ContentItem } from '@/ingestion/content/domain/aggregates/content-item';
 import { IContentItemWriteRepository } from '@/ingestion/content/domain/interfaces/repositories/content-item-write';
-import { ConcurrencyException } from '@/shared/kernel';
+import { ConcurrencyException } from '@/shared/domain';
 import { ContentItemEntity } from '../entities/content-item';
 
 /**

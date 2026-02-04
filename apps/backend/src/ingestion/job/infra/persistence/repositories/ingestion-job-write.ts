@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryDeepPartialEntity } from 'typeorm';
 import { IngestionJob } from '@/ingestion/job/domain/aggregates/ingestion-job';
 import { IIngestionJobWriteRepository } from '@/ingestion/job/domain/interfaces/repositories/ingestion-job-write';
-import { ConcurrencyException } from '@/shared/kernel';
+import { ConcurrencyException } from '@/shared/domain';
 import { IngestionJobEntity } from '../entities/ingestion-job';
 
 /**

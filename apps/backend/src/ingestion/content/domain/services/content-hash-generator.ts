@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ContentHash } from '../value-objects/content-hash';
-import { IHashService } from '@/shared/interfaces';
+import { IHashing } from '@/shared/domain/interfaces/crypto';
 
 /**
  * Content Hash Generator Domain Service
@@ -13,14 +13,14 @@ import { IHashService } from '@/shared/interfaces';
  * - The operation requires external dependencies (via interfaces)
  * - The operation represents a domain concept (not just technical plumbing)
  *
- * This service depends on the IHashService abstraction (technical concern),
+ * This service depends on the IHashing abstraction (technical concern),
  * but the VO remains pure and dependency-free.
  */
 @Injectable()
 export class ContentHashGenerator {
   constructor(
-    @Inject('IHashService')
-    private readonly hash: IHashService,
+    @Inject('IHashing')
+    private readonly hash: IHashing,
   ) {}
 
   /**

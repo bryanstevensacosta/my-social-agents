@@ -24,7 +24,10 @@ import { DataSource } from 'typeorm';
 import { SharedModule } from '@/shared/shared.module';
 import { IngestionContentModule } from '@/ingestion/content/ingestion-content.module';
 import { ContentHashGenerator } from '@/ingestion/content/domain/services/content-hash-generator';
-import { createTestDataSource } from '@/../test/setup';
+import {
+  getTestTypeOrmConfig,
+  cleanDatabase,
+} from '@/../test/helpers/test-database';
 
 describe('Property: Deduplication Correctness', () => {
   let module: TestingModule;
@@ -32,27 +35,13 @@ describe('Property: Deduplication Correctness', () => {
   let hashGenerator: ContentHashGenerator;
 
   beforeAll(async () => {
-    dataSource = createTestDataSource();
-    await dataSource.initialize();
-
     module = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
           isGlobal: true,
           envFilePath: '.env.test',
         }),
-        TypeOrmModule.forRoot({
-          type: 'postgres',
-          host: process.env.DB_HOST ?? 'localhost',
-          port: parseInt(process.env.DB_PORT ?? '5432', 10),
-          username: process.env.DB_USERNAME ?? 'postgres',
-          password: process.env.DB_PASSWORD ?? 'postgres',
-          database: process.env.DB_DATABASE_TEST ?? 'crypto_knowledge_test',
-          entities: [__dirname + '/../../**/infra/persistence/entities/*.ts'],
-          synchronize: true,
-          dropSchema: true,
-          logging: false,
-        }),
+        TypeOrmModule.forRoot(getTestTypeOrmConfig()),
         CqrsModule,
         SharedModule,
         IngestionContentModule,
@@ -62,14 +51,19 @@ describe('Property: Deduplication Correctness', () => {
     hashGenerator = module.get(ContentHashGenerator);
 
     await module.init();
+
+    // Get DataSource from module (don't create a separate one!)
+    dataSource = module.get(DataSource);
+  });
+
+  beforeEach(async () => {
+    // Clean database between tests for isolation
+    await cleanDatabase(dataSource);
   });
 
   afterAll(async () => {
     if (module) {
       await module.close();
-    }
-    if (dataSource && dataSource.isInitialized) {
-      await dataSource.destroy();
     }
   });
 

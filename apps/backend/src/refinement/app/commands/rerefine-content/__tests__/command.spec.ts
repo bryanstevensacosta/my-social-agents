@@ -1,25 +1,96 @@
 import { RerefineContentCommand } from '../command';
-import {
-  RefinementConfig,
-  ChunkingStrategy,
-  ExtractionMethod,
-} from '@refinement/domain/value-objects/refinement-config';
+import { RefinementConfig } from '@refinement/domain/value-objects/refinement-config';
 
 describe('RerefineContentCommand', () => {
   describe('constructor', () => {
-    it('should create command with valid properties', () => {
+    it('should create command with required properties', () => {
       const command = new RerefineContentCommand(
         'content-123',
-        'Low quality detected',
+        'Updated chunking strategy',
       );
 
       expect(command.contentItemId).toBe('content-123');
-      expect(command.reason).toBe('Low quality detected');
+      expect(command.reason).toBe('Updated chunking strategy');
       expect(command.config).toBeUndefined();
     });
 
     it('should create command with config', () => {
       const config = RefinementConfig.create({
+        chunkSize: 800,
+        chunkOverlap: 150,
+      });
+
+      const command = new RerefineContentCommand(
+        'content-123',
+        'Updated chunking strategy',
+        config,
+      );
+
+      expect(command.contentItemId).toBe('content-123');
+      expect(command.reason).toBe('Updated chunking strategy');
+      expect(command.config).toBe(config);
+    });
+
+    it('should create command with partial config', () => {
+      const config = RefinementConfig.create({
+        qualityThreshold: 0.5,
+      });
+
+      const command = new RerefineContentCommand(
+        'content-123',
+        'Increased quality threshold',
+        config,
+      );
+
+      expect(command.config).toBe(config);
+    });
+  });
+
+  describe('validation', () => {
+    it('should throw error if contentItemId is empty', () => {
+      expect(() => {
+        new RerefineContentCommand('', 'Some reason');
+      }).toThrow('Content item ID is required');
+    });
+
+    it('should throw error if contentItemId is whitespace', () => {
+      expect(() => {
+        new RerefineContentCommand('   ', 'Some reason');
+      }).toThrow('Content item ID is required');
+    });
+
+    it('should throw error if reason is empty', () => {
+      expect(() => {
+        new RerefineContentCommand('content-123', '');
+      }).toThrow('Reason for re-refinement is required');
+    });
+
+    it('should throw error if reason is whitespace', () => {
+      expect(() => {
+        new RerefineContentCommand('content-123', '   ');
+      }).toThrow('Reason for re-refinement is required');
+    });
+
+    it('should throw error if reason exceeds 500 characters', () => {
+      const longReason = 'a'.repeat(501);
+
+      expect(() => {
+        new RerefineContentCommand('content-123', longReason);
+      }).toThrow('Reason must be 500 characters or less');
+    });
+
+    it('should accept reason with exactly 500 characters', () => {
+      const maxReason = 'a'.repeat(500);
+
+      expect(() => {
+        new RerefineContentCommand('content-123', maxReason);
+      }).not.toThrow();
+    });
+  });
+
+  describe('use cases', () => {
+    it('should support configuration update use case', () => {
+      const newConfig = RefinementConfig.create({
         chunkSize: 1000,
         chunkOverlap: 200,
         qualityThreshold: 0.5,
@@ -27,115 +98,82 @@ describe('RerefineContentCommand', () => {
 
       const command = new RerefineContentCommand(
         'content-123',
-        'Algorithm update',
-        config,
+        'Updated chunk size and quality threshold',
+        newConfig,
       );
 
       expect(command.contentItemId).toBe('content-123');
-      expect(command.reason).toBe('Algorithm update');
-      expect(command.config).toBe(config);
+      expect(command.reason).toContain('Updated chunk size');
+      expect(command.config?.chunkSize).toBe(1000);
     });
 
-    it('should create command with partial config', () => {
+    it('should support algorithm improvement use case', () => {
+      const command = new RerefineContentCommand(
+        'content-123',
+        'Improved entity extraction algorithm deployed',
+      );
+
+      expect(command.reason).toContain('Improved entity extraction');
+      expect(command.config).toBeUndefined(); // Use default config
+    });
+
+    it('should support error recovery use case', () => {
+      const command = new RerefineContentCommand(
+        'content-123',
+        'Previous refinement failed due to timeout, retrying with optimized settings',
+      );
+
+      expect(command.reason).toContain('Previous refinement failed');
+    });
+
+    it('should support quality improvement use case', () => {
       const config = RefinementConfig.create({
-        qualityThreshold: 0.6,
+        qualityThreshold: 0.7,
       });
 
       const command = new RerefineContentCommand(
         'content-123',
-        'Quality threshold change',
+        'Increasing quality threshold to filter low-quality chunks',
         config,
       );
 
-      expect(command.config?.qualityThreshold).toBe(0.6);
-      // Value Object applies defaults for omitted properties
-      expect(command.config?.chunkSize).toBe(800); // Default value
-    });
-  });
-
-  describe('validation', () => {
-    describe('contentItemId', () => {
-      it('should reject empty content item ID', () => {
-        expect(() => new RerefineContentCommand('', 'Some reason')).toThrow(
-          'Content item ID is required',
-        );
-      });
-
-      it('should reject whitespace-only content item ID', () => {
-        expect(() => new RerefineContentCommand('   ', 'Some reason')).toThrow(
-          'Content item ID is required',
-        );
-      });
-    });
-
-    describe('reason', () => {
-      it('should reject empty reason', () => {
-        expect(() => new RerefineContentCommand('content-123', '')).toThrow(
-          'Reason is required',
-        );
-      });
-
-      it('should reject whitespace-only reason', () => {
-        expect(() => new RerefineContentCommand('content-123', '   ')).toThrow(
-          'Reason is required',
-        );
-      });
-
-      it('should reject reason longer than 500 characters', () => {
-        const longReason = 'a'.repeat(501);
-        expect(
-          () => new RerefineContentCommand('content-123', longReason),
-        ).toThrow('Reason must be 500 characters or less');
-      });
-
-      it('should accept reason with exactly 500 characters', () => {
-        const reason = 'a'.repeat(500);
-        const command = new RerefineContentCommand('content-123', reason);
-        expect(command.reason).toBe(reason);
-      });
-    });
-  });
-
-  describe('immutability', () => {
-    it('should have readonly properties', () => {
-      const command = new RerefineContentCommand('content-123', 'Test reason');
-
-      // TypeScript enforces readonly at compile time
-      // This test verifies the properties exist and are accessible
-      expect(command.contentItemId).toBe('content-123');
-      expect(command.reason).toBe('Test reason');
+      expect(command.config?.qualityThreshold).toBe(0.7);
     });
   });
 
   describe('edge cases', () => {
+    it('should handle very long content IDs', () => {
+      const longId = 'content-' + 'a'.repeat(100);
+
+      const command = new RerefineContentCommand(longId, 'Some reason');
+
+      expect(command.contentItemId).toBe(longId);
+    });
+
     it('should handle special characters in reason', () => {
-      const reason = 'Reason with special chars: @#$%^&*()';
+      const reason =
+        'Updated config: chunk_size=800, overlap=150 (50% improvement)';
+
       const command = new RerefineContentCommand('content-123', reason);
+
       expect(command.reason).toBe(reason);
     });
 
     it('should handle unicode characters in reason', () => {
-      const reason = 'Reason with unicode: 你好 🚀';
+      const reason = 'Actualización de configuración 🚀';
+
       const command = new RerefineContentCommand('content-123', reason);
+
       expect(command.reason).toBe(reason);
     });
 
-    it('should handle all config options together', () => {
-      const config = RefinementConfig.create({
-        chunkSize: 800,
-        chunkOverlap: 150,
-        qualityThreshold: 0.7,
-        chunkingStrategy: ChunkingStrategy.SEMANTIC,
-        extractionMethod: ExtractionMethod.HYBRID,
-      });
+    it('should handle multiline reason', () => {
+      const reason =
+        'Updated configuration:\n- Chunk size: 1000\n- Quality: 0.5';
 
-      const command = new RerefineContentCommand(
-        'content-123',
-        'Full config test',
-        config,
-      );
+      const command = new RerefineContentCommand('content-123', reason);
 
-      expect(command.config).toBe(config);
+      expect(command.reason).toContain('Updated configuration');
     });
   });
 });

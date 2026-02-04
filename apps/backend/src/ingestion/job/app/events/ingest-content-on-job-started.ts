@@ -5,7 +5,7 @@ import { IngestContentCommand } from '@/ingestion/content/app/commands/ingest-co
 import { IngestContentResult } from '@/ingestion/content/app/commands/ingest-content';
 import { CompleteJobCommand } from '@/ingestion/job/app/commands/complete-job';
 import { FailJobCommand } from '@/ingestion/job/app/commands/fail-job';
-import { IRetryService } from '@/shared/interfaces/retry';
+import { IRetryService } from '@/shared/domain/interfaces/resilience/retry';
 
 /**
  * IngestContentOnJobStarted

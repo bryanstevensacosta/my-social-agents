@@ -22,6 +22,7 @@
  * @see ContentRefinement - The aggregate root that owns this entity
  */
 
+import { v4 as uuidv4 } from 'uuid';
 import { ChunkHash } from '@refinement/domain/value-objects/chunk-hash';
 import { ChunkPosition } from '@refinement/domain/value-objects/chunk-position';
 import { CryptoEntity } from '@refinement/domain/value-objects/crypto-entity';
@@ -102,10 +103,10 @@ export class Chunk {
   }
 
   /**
-   * Generates a unique chunk ID
+   * Generates a unique chunk ID using UUID v4
    */
   private static generateId(): string {
-    return `chunk_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    return uuidv4();
   }
 
   /**

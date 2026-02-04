@@ -1,6 +1,6 @@
 import { ContentHash } from '../value-objects/content-hash';
 import { ContentMetadata, AssetTag } from '../value-objects';
-import { AggregateRoot, AggregateVersion } from '@/shared/kernel';
+import { AggregateRoot, AggregateVersion } from '@/shared/domain/core';
 
 /**
  * ContentItem Aggregate Root

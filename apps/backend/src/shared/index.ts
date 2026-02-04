@@ -8,13 +8,10 @@
 export { SharedModule } from './shared.module';
 
 // Kernel exports
-export * from './kernel';
-
-// Interface exports
-export * from './interfaces';
+export * from './domain';
 
 // Infrastructure exports
 export * from './infra';
 
 // Event Sourcing exports
-export * from './event-sourcing';
+export * from './domain/interfaces/event-sourcing';

@@ -4,7 +4,7 @@ import { Repository, LessThan } from 'typeorm';
 import {
   ISnapshotStore,
   Snapshot,
-} from '@/shared/event-sourcing/snapshot-store';
+} from '@/shared/domain/interfaces/event-sourcing/snapshot-store';
 import { AggregateSnapshotEntity } from './entities/aggregate-snapshot.entity';
 
 /**

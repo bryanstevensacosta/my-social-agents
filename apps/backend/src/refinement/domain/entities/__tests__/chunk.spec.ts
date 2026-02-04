@@ -22,7 +22,9 @@ describe('Chunk', () => {
       });
 
       expect(chunk.id).toBeDefined();
-      expect(chunk.id).toMatch(/^chunk_/);
+      expect(chunk.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      ); // UUID v4 format
       expect(chunk.contentId).toBe('content-123');
       expect(chunk.content).toBe(validContent);
       expect(chunk.position).toBe(validPosition);

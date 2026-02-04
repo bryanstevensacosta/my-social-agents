@@ -25,7 +25,7 @@ import { SourceConfigurationEntity } from './source/infra/persistence/entities/s
  *
  * Shared Infrastructure (from SharedModule):
  * - IRetryService, ICircuitBreaker (resilience)
- * - IHashService, ICredentialEncryption (cryptographic)
+ * - IHashing, ICredentialEncryption (cryptographic)
  * - ScheduleModule (job scheduling)
  * - Event publishing via @nestjs/cqrs EventBus
  *

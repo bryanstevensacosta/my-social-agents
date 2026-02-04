@@ -1,56 +1,68 @@
 /**
  * RerefineContentResult
  *
- * Result of re-refinement command execution.
- * Contains the outcome of the re-refinement process.
+ * Result of content re-refinement operation.
+ * Contains summary information about the re-refinement process.
  *
- * Requirements: Refinement 11
- * Design: Application Layer - Command Results
+ * Requirements: Refinement 11, 12
+ * Design: Application Layer - Commands
  */
-
-/**
- * Base result interface with common properties
- */
-interface BaseRerefineContentResult {
+export interface RerefineContentResult {
+  /**
+   * ID of the new refined content aggregate
+   */
   refinementId: string;
+
+  /**
+   * ID of the content item that was re-refined
+   */
   contentItemId: string;
+
+  /**
+   * ID of the previous refinement (for audit trail)
+   */
+  previousRefinementId: string;
+
+  /**
+   * Reason for re-refinement
+   */
   reason: string;
-}
 
-/**
- * Result when re-refinement completes successfully
- */
-export interface RerefineContentCompletedResult extends BaseRerefineContentResult {
-  status: 'completed';
-  chunkCount: number;
-  durationMs: number;
-  averageQualityScore: number;
-  previousRefinementId?: string;
-}
+  /**
+   * Final status of the re-refinement
+   */
+  status: 'completed' | 'failed' | 'rejected';
 
-/**
- * Result when content is rejected during re-refinement
- */
-export interface RerefineContentRejectedResult extends BaseRerefineContentResult {
-  status: 'rejected';
-  rejectionReason: string;
-}
+  /**
+   * Number of chunks created
+   * Only present if status is 'completed'
+   */
+  chunkCount?: number;
 
-/**
- * Result when re-refinement fails with an error
- */
-export interface RerefineContentFailedResult extends BaseRerefineContentResult {
-  status: 'failed';
-  error: {
+  /**
+   * Duration of re-refinement process in milliseconds
+   * Only present if status is 'completed' or 'failed'
+   */
+  durationMs?: number;
+
+  /**
+   * Average quality score of chunks
+   * Only present if status is 'completed'
+   */
+  averageQualityScore?: number;
+
+  /**
+   * Error information
+   * Only present if status is 'failed'
+   */
+  error?: {
     code: string;
     message: string;
   };
-}
 
-/**
- * Union type for all possible re-refinement results
- */
-export type RerefineContentResult =
-  | RerefineContentCompletedResult
-  | RerefineContentRejectedResult
-  | RerefineContentFailedResult;
+  /**
+   * Rejection reason
+   * Only present if status is 'rejected'
+   */
+  rejectionReason?: string;
+}

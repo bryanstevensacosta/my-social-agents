@@ -5,28 +5,25 @@ import { RerefineContentResult } from './result';
 /**
  * RerefineContentCommand
  *
- * Command to re-refine previously refined content with a new refinement process.
- * This is used when content needs to be reprocessed due to:
- * - Quality issues discovered after initial refinement
- * - Updated extraction algorithms
- * - Manual review requiring reprocessing
- * - Configuration changes (chunk size, quality threshold, etc.)
+ * Command to re-refine previously refined content with updated configuration.
+ * This allows reprocessing content when:
+ * - Configuration parameters change (chunk size, quality threshold, etc.)
+ * - Extraction algorithms improve
+ * - Content needs to be reprocessed due to errors
  *
- * The command includes a reason to track why reprocessing was requested.
+ * This command represents the intent to:
+ * - Load existing refinement
+ * - Validate that content can be re-refined
+ * - Apply new configuration
+ * - Create new refinement version
+ * - Preserve audit trail of re-refinement
  *
  * Extends Command<RerefineContentResult> for automatic type inference.
  *
- * Requirements: Refinement 11
+ * Requirements: Refinement 11, 12
  * Design: Application Layer - Commands
  */
 export class RerefineContentCommand extends Command<RerefineContentResult> {
-  /**
-   * Creates a new RerefineContentCommand
-   *
-   * @param contentItemId - ID of the content item to re-refine
-   * @param reason - Reason for re-refinement (e.g., "Low quality detected", "Algorithm update")
-   * @param config - Optional refinement configuration overrides
-   */
   constructor(
     public readonly contentItemId: string,
     public readonly reason: string,
@@ -45,7 +42,7 @@ export class RerefineContentCommand extends Command<RerefineContentResult> {
     }
 
     if (!this.reason || this.reason.trim().length === 0) {
-      throw new Error('Reason is required');
+      throw new Error('Reason for re-refinement is required');
     }
 
     if (this.reason.length > 500) {
@@ -53,6 +50,5 @@ export class RerefineContentCommand extends Command<RerefineContentResult> {
     }
 
     // Config validation is handled by the RefinementConfig Value Object itself
-    // No need to validate here - if config is provided, it's already valid
   }
 }

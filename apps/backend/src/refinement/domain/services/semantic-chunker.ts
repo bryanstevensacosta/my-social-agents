@@ -1,10 +1,11 @@
+import { Injectable, Inject } from '@nestjs/common';
 import { Chunk } from '@refinement/domain/entities/chunk';
-import { ChunkHash } from '@refinement/domain/value-objects/chunk-hash';
 import { ChunkPosition } from '@refinement/domain/value-objects/chunk-position';
 import {
   IChunkingStrategy,
   ChunkingConfig,
 } from '@refinement/domain/interfaces/services/chunking-strategy';
+import { ChunkHashGenerator } from './chunk-hash-generator';
 
 /**
  * SemanticChunker Domain Service
@@ -15,8 +16,13 @@ import {
  * Requirements: Refinement 2
  * Design: Domain Services section - SemanticChunker
  */
+@Injectable()
 export class SemanticChunker {
-  constructor(private readonly strategy: IChunkingStrategy) {}
+  constructor(
+    @Inject('IChunkingStrategy')
+    private readonly strategy: IChunkingStrategy,
+    private readonly hashGenerator: ChunkHashGenerator,
+  ) {}
 
   /**
    * Chunks content and creates Chunk entities
@@ -57,8 +63,8 @@ export class SemanticChunker {
       const startOffset = currentOffset;
       const endOffset = startOffset + chunkText.length;
 
-      // Create chunk hash
-      const hash = ChunkHash.create(chunkText);
+      // Create chunk hash using hash generator
+      const hash = this.hashGenerator.generate(chunkText);
 
       // Create chunk position
       const position = ChunkPosition.create(i, startOffset, endOffset);

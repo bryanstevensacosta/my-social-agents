@@ -35,7 +35,10 @@ import { IngestionJobModule } from '@/ingestion/job/ingestion-job.module';
 import { IngestionContentModule } from '@/ingestion/content/ingestion-content.module';
 import { SourceTypeEnum } from '@/ingestion/source/domain/value-objects/source-type';
 import { SourceUnhealthyEvent } from '@/ingestion/source/domain/events/source-unhealthy';
-import { createTestDataSource } from '@/../test/setup';
+import {
+  getTestTypeOrmConfig,
+  cleanDatabase,
+} from '@/../test/helpers/test-database';
 import {
   executeWithRetry,
   pollUntil,
@@ -50,10 +53,6 @@ describe('Integration: Source Health Tracking', () => {
   let dataSource: DataSource;
 
   beforeAll(async () => {
-    // Create test database connection
-    dataSource = createTestDataSource();
-    await dataSource.initialize();
-
     // Create test module with all required modules
     module = await Test.createTestingModule({
       imports: [
@@ -61,18 +60,7 @@ describe('Integration: Source Health Tracking', () => {
           isGlobal: true,
           envFilePath: '.env.test',
         }),
-        TypeOrmModule.forRoot({
-          type: 'postgres',
-          host: process.env.DB_HOST ?? 'localhost',
-          port: parseInt(process.env.DB_PORT ?? '5432', 10),
-          username: process.env.DB_USERNAME ?? 'postgres',
-          password: process.env.DB_PASSWORD ?? 'postgres',
-          database: process.env.DB_DATABASE_TEST ?? 'crypto_knowledge_test',
-          entities: [__dirname + '/../../**/infra/persistence/entities/*.ts'],
-          synchronize: true,
-          dropSchema: true,
-          logging: false,
-        }),
+        TypeOrmModule.forRoot(getTestTypeOrmConfig()),
         CqrsModule,
         SharedModule,
         IngestionSourceModule,
@@ -86,14 +74,19 @@ describe('Integration: Source Health Tracking', () => {
     eventBus = module.get(EventBus);
 
     await module.init();
+
+    // Get DataSource from module (don't create a separate one!)
+    dataSource = module.get(DataSource);
+  });
+
+  beforeEach(async () => {
+    // Clean database between tests for isolation
+    await cleanDatabase(dataSource);
   });
 
   afterAll(async () => {
     if (module) {
       await module.close();
-    }
-    if (dataSource && dataSource.isInitialized) {
-      await dataSource.destroy();
     }
   });
 

@@ -1,14 +1,14 @@
 import * as fc from 'fast-check';
 import { DuplicateDetectionService } from '../duplicate-detection';
 import { ContentHashGenerator } from '../content-hash-generator';
-import { HashService } from '@/shared/infra/external';
+import { Hashing } from '@/shared/infra/crypto';
 
 describe('DuplicateDetectionService', () => {
   let service: DuplicateDetectionService;
   let hashGenerator: ContentHashGenerator;
 
   beforeEach(() => {
-    const hashImpl = new HashService();
+    const hashImpl = new Hashing();
     hashGenerator = new ContentHashGenerator(hashImpl);
     service = new DuplicateDetectionService(hashGenerator);
   });

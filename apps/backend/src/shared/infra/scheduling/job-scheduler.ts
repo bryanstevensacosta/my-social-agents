@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { IJobScheduler, JobCallback } from '@/shared/kernel';
+import { IJobScheduler, JobCallback } from '@/shared/domain';
 
 /**
  * JobSchedulerService

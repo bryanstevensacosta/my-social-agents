@@ -2,8 +2,10 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Logger, Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { ISourceConfigurationWriteRepository } from '@/ingestion/source/domain/interfaces/repositories/source-configuration-write';
-import { ICredentialEncryption } from '@/shared/interfaces';
-import { IEncryptionKeyProvider } from '@/shared/interfaces';
+import {
+  ICredentialEncryption,
+  IEncryptionKeyProvider,
+} from '@/shared/domain/interfaces/crypto';
 import { SourceConfiguration } from '@/ingestion/source/domain/aggregates/source-configuration';
 import { SourceType } from '@/ingestion/source/domain/value-objects/source-type';
 import { CreateSourceCommand } from './command';

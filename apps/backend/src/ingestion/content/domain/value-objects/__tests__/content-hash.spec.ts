@@ -1,13 +1,13 @@
 import * as fc from 'fast-check';
 import { ContentHash } from '../content-hash';
 import { ContentHashGenerator } from '@/ingestion/content/domain/services';
-import { HashService } from '@/shared/infra/external';
+import { Hashing } from '@/shared/infra/crypto';
 
 describe('ContentHash', () => {
   let generator: ContentHashGenerator;
 
   beforeEach(() => {
-    const hash = new HashService();
+    const hash = new Hashing();
     generator = new ContentHashGenerator(hash);
   });
 

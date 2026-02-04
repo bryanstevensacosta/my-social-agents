@@ -28,7 +28,10 @@ import { IngestionJobModule } from '@/ingestion/job/ingestion-job.module';
 import { IngestionContentModule } from '@/ingestion/content/ingestion-content.module';
 import { SourceTypeEnum } from '@/ingestion/source/domain/value-objects/source-type';
 import { ContentHashGenerator } from '@/ingestion/content/domain/services/content-hash-generator';
-import { createTestDataSource } from '@/../test/setup';
+import {
+  getTestTypeOrmConfig,
+  cleanDatabase,
+} from '@/../test/helpers/test-database';
 
 describe('Integration: Content Deduplication', () => {
   let module: TestingModule;
@@ -38,10 +41,6 @@ describe('Integration: Content Deduplication', () => {
   let hashGenerator: ContentHashGenerator;
 
   beforeAll(async () => {
-    // Create test database connection
-    dataSource = createTestDataSource();
-    await dataSource.initialize();
-
     // Create test module with all required modules
     module = await Test.createTestingModule({
       imports: [
@@ -49,18 +48,7 @@ describe('Integration: Content Deduplication', () => {
           isGlobal: true,
           envFilePath: '.env.test',
         }),
-        TypeOrmModule.forRoot({
-          type: 'postgres',
-          host: process.env.DB_HOST ?? 'localhost',
-          port: parseInt(process.env.DB_PORT ?? '5432', 10),
-          username: process.env.DB_USERNAME ?? 'postgres',
-          password: process.env.DB_PASSWORD ?? 'postgres',
-          database: process.env.DB_DATABASE_TEST ?? 'crypto_knowledge_test',
-          entities: [__dirname + '/../../**/infra/persistence/entities/*.ts'],
-          synchronize: true,
-          dropSchema: true,
-          logging: false,
-        }),
+        TypeOrmModule.forRoot(getTestTypeOrmConfig()),
         CqrsModule,
         SharedModule,
         IngestionSourceModule,
@@ -74,14 +62,19 @@ describe('Integration: Content Deduplication', () => {
     hashGenerator = module.get(ContentHashGenerator);
 
     await module.init();
+
+    // Get DataSource from module (don't create a separate one!)
+    dataSource = module.get(DataSource);
+  });
+
+  beforeEach(async () => {
+    // Clean database between tests for isolation
+    await cleanDatabase(dataSource);
   });
 
   afterAll(async () => {
     if (module) {
       await module.close();
-    }
-    if (dataSource && dataSource.isInitialized) {
-      await dataSource.destroy();
     }
   });
 

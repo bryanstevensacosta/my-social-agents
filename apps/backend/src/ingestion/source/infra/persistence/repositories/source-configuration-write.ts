@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryDeepPartialEntity } from 'typeorm';
 import { SourceConfiguration } from '@/ingestion/source/domain/aggregates/source-configuration';
 import { ISourceConfigurationWriteRepository } from '@/ingestion/source/domain/interfaces/repositories/source-configuration-write';
-import { ConcurrencyException } from '@/shared/kernel';
+import { ConcurrencyException } from '@/shared/domain';
 import { SourceConfigurationEntity } from '../entities/source-configuration';
 
 /**
