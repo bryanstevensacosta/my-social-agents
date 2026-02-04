@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Git Safe Aliases - Prevent accidental data loss and enforce rebase workflow
-# Source this file in your shell: source .git-safe-aliases.sh
+# Source this file in your shell: source scripts/git-aliases-safe.sh
 
 # Safe git clean - always shows what will be deleted and asks for confirmation
 git-clean-safe() {

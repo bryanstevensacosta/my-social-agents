@@ -58,7 +58,7 @@ This script:
 Load the aliases:
 
 ```bash
-source .git-merged-aliases.sh
+source scripts/git-aliases-merged.sh
 ```
 
 Available commands:
@@ -189,6 +189,6 @@ jobs:
 ## Related Files
 
 - `scripts/cleanup-merged-branches.sh` - Automated cleanup script
-- `.git-merged-aliases.sh` - Git aliases for branch detection
+- `scripts/git-aliases-merged.sh` - Git aliases for branch detection
 - `.kiro/steering/60-git-workflow.md` - Git workflow documentation
 - `.kiro/steering/61-git-hooks.md` - Git hooks documentation

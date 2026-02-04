@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Git Aliases for Detecting Merged Branches with Rebase
-# Source this file in your shell: source .git-merged-aliases.sh
+# Source this file in your shell: source scripts/git-aliases-merged.sh
 
 # Detect branches merged via rebase by comparing patch-id
 git-merged-rebase() {

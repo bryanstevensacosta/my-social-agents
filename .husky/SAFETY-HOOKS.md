@@ -375,7 +375,7 @@ git checkout master
 - **Git Workflow:** `.kiro/steering/60-git-workflow-rebase.md`
 - **Rebase Migration:** `.kiro/steering/REBASE_WORKFLOW_MIGRATION.md`
 - **Comparison:** `.kiro/steering/GIT-WORKFLOW-COMPARISON.md`
-- **Safe Aliases:** `.git-safe-aliases.sh`
+- **Safe Aliases:** `scripts/git-aliases-safe.sh`
 
 ---
 
