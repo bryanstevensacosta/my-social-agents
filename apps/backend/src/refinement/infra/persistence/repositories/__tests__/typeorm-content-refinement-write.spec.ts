@@ -43,15 +43,15 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
 
     it('should update an existing aggregate', async () => {
       const aggregate = ContentRefinement.create('ref-1', 'content-1');
-      aggregate.start();
+      aggregate.start(); // Version becomes 1
 
       const existingEntity = new ContentRefinementEntity();
       existingEntity.id = 'ref-1';
-      existingEntity.version = 0; // Match aggregate's current version
+      existingEntity.version = 0; // Database has previous version (before start())
 
       const savedEntity = new ContentRefinementEntity();
       savedEntity.id = 'ref-1';
-      existingEntity.version = 1; // After increment
+      savedEntity.version = 1; // After save
 
       mockTypeOrmRepo.findOne.mockResolvedValue(existingEntity);
       mockTypeOrmRepo.save.mockResolvedValue(savedEntity);
@@ -63,17 +63,25 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
 
     it('should handle optimistic locking', async () => {
       const aggregate = ContentRefinement.create('ref-1', 'content-1');
-      aggregate.start();
+      aggregate.start(); // Version becomes 1
 
       const existingEntity = new ContentRefinementEntity();
       existingEntity.id = 'ref-1';
-      existingEntity.version = 5; // Different version (concurrent modification)
+      existingEntity.version = 5; // Database has different version (concurrent modification)
 
       mockTypeOrmRepo.findOne.mockResolvedValue(existingEntity);
 
-      await expect(repository.save(aggregate)).rejects.toThrow(
-        ConcurrencyException,
-      );
+      try {
+        await repository.save(aggregate);
+        fail('Should have thrown ConcurrencyException');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ConcurrencyException);
+        if (error instanceof Error) {
+          expect(error.message).toContain(
+            'was modified by another transaction',
+          );
+        }
+      }
     });
 
     it('should map all value objects correctly', async () => {

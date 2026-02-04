@@ -54,10 +54,12 @@ describe('TypeOrmContentRefinementFactory', () => {
       entity.status = 'completed';
 
       // Add at least one chunk (required for completed status)
+      // Content must be at least 200 characters (Chunk validation requirement)
       const chunk = new ChunkEntity();
       chunk.id = 'chunk-1';
       chunk.refinementId = 'ref-1';
-      chunk.content = 'Test chunk content';
+      chunk.content =
+        'Bitcoin is a decentralized digital currency that operates without a central bank or single administrator. It can be sent from user to user on the peer-to-peer bitcoin network without the need for intermediaries and is verified by network nodes through cryptography.';
       chunk.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk.position = 0;
       chunk.entities = [];
@@ -84,7 +86,8 @@ describe('TypeOrmContentRefinementFactory', () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
       chunk1.refinementId = 'ref-1';
-      chunk1.content = 'First chunk.';
+      chunk1.content =
+        'Bitcoin is a decentralized digital currency that operates without a central bank or single administrator. It can be sent from user to user on the peer-to-peer bitcoin network without the need for intermediaries and is verified by network nodes through cryptography.';
       chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
       chunk1.entities = [];
@@ -94,7 +97,8 @@ describe('TypeOrmContentRefinementFactory', () => {
       const chunk2 = new ChunkEntity();
       chunk2.id = 'chunk-2';
       chunk2.refinementId = 'ref-1';
-      chunk2.content = 'Second chunk.';
+      chunk2.content =
+        'Ethereum is a decentralized platform that runs smart contracts and applications without downtime, fraud, control or interference from a third party. It provides a cryptocurrency token called ether which can be transferred between accounts and used to compensate participant nodes.';
       chunk2.hash = 'b'.repeat(64); // Valid 64-char hex hash
       chunk2.position = 1;
       chunk2.entities = [];
@@ -125,7 +129,8 @@ describe('TypeOrmContentRefinementFactory', () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
       chunk1.refinementId = 'ref-1';
-      chunk1.content = 'Bitcoin analysis.';
+      chunk1.content =
+        'Bitcoin analysis shows strong market performance with increasing adoption rates across institutional investors. The cryptocurrency has demonstrated resilience through various market cycles and continues to be the dominant digital asset by market capitalization and network security.';
       chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
       chunk1.entities = [{ type: 'token', symbol: 'BTC', confidence: 0.95 }];
@@ -158,7 +163,8 @@ describe('TypeOrmContentRefinementFactory', () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
       chunk1.refinementId = 'ref-1';
-      chunk1.content = 'Bitcoin on January 15, 2024.';
+      chunk1.content =
+        'Bitcoin reached a new all-time high on January 15, 2024, breaking through the $50,000 resistance level. This milestone was driven by increased institutional adoption and positive regulatory developments in major markets around the world.';
       chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
       chunk1.entities = [];
@@ -193,7 +199,8 @@ describe('TypeOrmContentRefinementFactory', () => {
       const chunk1 = new ChunkEntity();
       chunk1.id = 'chunk-1';
       chunk1.refinementId = 'ref-1';
-      chunk1.content = 'Bitcoin analysis.';
+      chunk1.content =
+        'Bitcoin analysis reveals strong fundamentals with growing network effects and increasing institutional adoption. The cryptocurrency continues to demonstrate its value proposition as a store of value and medium of exchange in the digital economy.';
       chunk1.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk1.position = 0;
       chunk1.entities = [];
@@ -255,7 +262,8 @@ describe('TypeOrmContentRefinementFactory', () => {
       const chunk = new ChunkEntity();
       chunk.id = 'chunk-1';
       chunk.refinementId = 'ref-1';
-      chunk.content = 'Test chunk';
+      chunk.content =
+        'Comprehensive analysis of cryptocurrency market trends showing sustained growth patterns and increasing mainstream adoption. The digital asset ecosystem continues to mature with improved infrastructure and regulatory clarity in key jurisdictions.';
       chunk.hash = 'a'.repeat(64); // Valid 64-char hex hash
       chunk.position = 0;
       chunk.entities = [];
@@ -279,7 +287,7 @@ describe('TypeOrmContentRefinementFactory', () => {
       const result = await factory.load('ref-1');
 
       expect(result).toBeDefined();
-      expect(result?.version).toBe(5);
+      expect(result?.version.value).toBe(5);
     });
   });
 });

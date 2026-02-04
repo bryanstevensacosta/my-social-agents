@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { IContentRefinementWriteRepository } from '@refinement/domain/interfaces/repositories/content-refinement-write';
 import { ContentRefinement } from '@refinement/domain/aggregates/content-refinement';
 import { ContentRefinementEntity, ChunkEntity } from '../entities';
+import { ConcurrencyException } from '@/shared/domain';
 
 /**
  * TypeORM implementation of IContentRefinementWriteRepository
@@ -65,12 +66,6 @@ export class TypeOrmContentRefinementWriteRepository implements IContentRefineme
       // Existing entity found - this is an UPDATE with optimistic locking
       // Check version mismatch (concurrent modification)
       if (existingEntity.version !== refinement.version.value - 1) {
-        const ConcurrencyException = class extends Error {
-          constructor(message: string) {
-            super(message);
-            this.name = 'ConcurrencyException';
-          }
-        };
         throw new ConcurrencyException(
           `Refinement ${refinement.id} was modified by another transaction. ` +
             `Expected version ${refinement.version.value - 1}, found ${existingEntity.version}`,
