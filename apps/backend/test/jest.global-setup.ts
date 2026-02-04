@@ -39,7 +39,7 @@ export default async function globalSetup() {
 
     await setupConnection.destroy();
 
-    // Now create the schema in the test database
+    // Now create the schema in the test database using migrations
     const schemaConnection = new DataSource({
       type: 'postgres',
       host: process.env.DB_HOST ?? 'localhost',
@@ -51,13 +51,22 @@ export default async function globalSetup() {
         __dirname + '/../src/**/infra/persistence/entities/*.entity.ts',
         __dirname + '/../src/**/infra/persistence/entities/!(index).ts',
       ],
-      synchronize: true, // Create schema once here
-      dropSchema: true, // Drop schema first to ensure clean state
+      migrations: [
+        __dirname + '/../src/shared/migrations/*.ts',
+        __dirname + '/../src/ingestion/migrations/*.ts',
+        __dirname + '/../src/refinement/migrations/*.ts',
+      ],
+      synchronize: false, // Use migrations instead
+      dropSchema: false, // Don't drop - database is already fresh
       logging: false,
     });
 
     await schemaConnection.initialize();
-    console.log(`✅ Test database schema created\n`);
+
+    // Run all migrations
+    await schemaConnection.runMigrations();
+    console.log(`✅ Test database schema created via migrations\n`);
+
     await schemaConnection.destroy();
   } catch (error) {
     console.error('❌ Failed to setup test database:', error);
