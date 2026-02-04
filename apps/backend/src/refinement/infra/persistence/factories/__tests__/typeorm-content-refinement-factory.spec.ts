@@ -21,12 +21,12 @@ describe('TypeOrmContentRefinementFactory', () => {
       const entity = new ContentRefinementEntity();
       entity.id = 'ref-1';
       entity.contentItemId = 'content-1';
-      entity.status = 'completed';
+      entity.status = 'processing'; // Use processing instead of completed
       entity.chunks = [];
       entity.version = 1;
       entity.createdAt = new Date('2024-01-20T00:00:00Z');
       entity.updatedAt = new Date('2024-01-20T00:00:00Z');
-      entity.refinedAt = new Date('2024-01-20T00:00:00Z');
+      entity.refinedAt = null; // Not completed yet
       entity.error = null;
 
       mockRepository.findOne.mockResolvedValue(entity);

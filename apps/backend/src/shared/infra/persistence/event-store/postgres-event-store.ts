@@ -10,8 +10,8 @@ import {
   Subscription,
   DomainEvent,
   EventMetadata,
-} from '@/shared/event-sourcing/event-store';
-import { ConcurrencyException } from '@/shared/kernel/concurrency-exception';
+} from '@/shared/domain/interfaces/event-sourcing/event-store';
+import { ConcurrencyException } from '@/shared/domain';
 import { DomainEventEntity } from './entities/domain-event.entity';
 
 /**

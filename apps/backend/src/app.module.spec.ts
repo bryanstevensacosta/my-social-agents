@@ -30,7 +30,7 @@ import { IngestionModule } from './ingestion/ingestion.module';
       },
     },
     {
-      provide: 'IHashService',
+      provide: 'IHashing',
       useValue: {
         sha256: jest.fn().mockReturnValue('a'.repeat(64)),
       },
@@ -107,7 +107,7 @@ import { IngestionModule } from './ingestion/ingestion.module';
     'IRetryService',
     'ICircuitBreaker',
     'ICredentialEncryption',
-    'IHashService',
+    'IHashing',
     'ISourceConfigurationWriteRepository',
     'ISourceConfigurationFactory',
     'ISourceConfigurationReadRepository',

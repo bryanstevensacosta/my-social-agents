@@ -1,7 +1,7 @@
 import * as fc from 'fast-check';
 import { EventSourcedAggregate } from '../event-sourced-aggregate';
 import { DomainEvent } from '../event-store';
-import { AggregateVersion } from '../../kernel';
+import { AggregateVersion } from '../../../core';
 
 /**
  * Test Domain Events for property testing

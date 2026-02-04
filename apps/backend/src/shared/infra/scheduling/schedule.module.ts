@@ -35,7 +35,7 @@ import { JobSchedulerService } from './job-scheduler';
  * @example
  * ```typescript
  * // In a use case
- * import { IJobScheduler } from '@/shared/kernel';
+ * import { IJobScheduler } from '@/shared/domain';
  *
  * @Injectable()
  * class MyUseCase {

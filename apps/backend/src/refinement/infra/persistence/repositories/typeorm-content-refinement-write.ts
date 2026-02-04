@@ -36,7 +36,7 @@ export class TypeOrmContentRefinementWriteRepository implements IContentRefineme
    * Cascades save to all chunks.
    *
    * @param refinement - ContentRefinement aggregate to save
-   * @throws Error if optimistic locking fails
+   * @throws ConcurrencyException if optimistic locking fails
    */
   async save(refinement: ContentRefinement): Promise<void> {
     this.logger.debug(`Saving refinement: ${refinement.id}`);
@@ -45,7 +45,39 @@ export class TypeOrmContentRefinementWriteRepository implements IContentRefineme
       // Map aggregate to entity
       const entity = this.toEntity(refinement);
 
-      // Save with optimistic locking
+      // Check if this is a new aggregate (version = 0)
+      if (refinement.version.value === 0) {
+        // Insert new aggregate using save() instead of insert()
+        // save() handles entity relationships better than insert()
+        await this.refinementRepository.save(entity);
+        this.logger.debug(`New refinement inserted: ${refinement.id}`);
+        return;
+      }
+
+      // For existing aggregates, check version for optimistic locking
+      const existingEntity = await this.refinementRepository.findOne({
+        where: { id: refinement.id },
+      });
+
+      if (!existingEntity) {
+        throw new Error(`Refinement ${refinement.id} not found`);
+      }
+
+      // Check version mismatch (concurrent modification)
+      if (existingEntity.version !== refinement.version.value - 1) {
+        const ConcurrencyException = class extends Error {
+          constructor(message: string) {
+            super(message);
+            this.name = 'ConcurrencyException';
+          }
+        };
+        throw new ConcurrencyException(
+          `Refinement ${refinement.id} was modified by another transaction. ` +
+            `Expected version ${refinement.version.value - 1}, found ${existingEntity.version}`,
+        );
+      }
+
+      // Save with updated version
       await this.refinementRepository.save(entity);
 
       this.logger.debug(`Refinement saved successfully: ${refinement.id}`);

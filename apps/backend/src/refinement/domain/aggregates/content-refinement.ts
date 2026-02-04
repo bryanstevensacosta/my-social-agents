@@ -1,4 +1,4 @@
-import { AggregateRoot, AggregateVersion } from '@/shared/kernel';
+import { AggregateRoot, AggregateVersion } from '@/shared/domain';
 import { Chunk } from '@refinement/domain/entities/chunk';
 import { RefinementStatus } from '@refinement/domain/value-objects/refinement-status';
 import { RefinementError } from '@refinement/domain/value-objects/refinement-error';

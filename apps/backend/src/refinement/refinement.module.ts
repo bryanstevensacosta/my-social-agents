@@ -211,6 +211,24 @@ import { ContentQualityAnalyzer as InfraContentQualityAnalyzer } from './infra/q
       provide: 'IQualityAnalyzer',
       useClass: InfraContentQualityAnalyzer,
     },
+
+    // ===== Mock Factory for Testing =====
+    // TODO: Replace with real ContentItemFactory from Ingestion context
+    {
+      provide: 'IContentItemFactory',
+      useValue: {
+        load: (contentItemId: string) => ({
+          contentId: contentItemId,
+          normalizedContent: `Bitcoin analysis content for ${contentItemId}. Bitcoin (BTC) reached $50,000 on January 15, 2024. Ethereum (ETH) also saw gains. Cardano (ADA) is showing promise. This is a comprehensive analysis of the cryptocurrency market with sufficient length for testing purposes.`,
+          metadata: {
+            title: 'Crypto Market Analysis',
+            author: 'Test Author',
+            publishedAt: new Date('2024-01-20T00:00:00Z'),
+            sourceUrl: 'https://example.com/crypto-analysis',
+          },
+        }),
+      },
+    },
   ],
   exports: [
     // Export command handlers for use in other modules

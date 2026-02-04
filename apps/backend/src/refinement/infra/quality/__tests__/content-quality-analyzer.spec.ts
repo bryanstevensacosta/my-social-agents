@@ -265,7 +265,10 @@ describe('ContentQualityAnalyzer', () => {
 
     it('should handle content with mixed quality signals', async () => {
       const content = 'Bitcoin. Short. But crypto relevant.';
-      const metadata = createMetadata(10, new Date('2024-01-20T00:00:00Z'), 1);
+      // Use current date for freshness test
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - 5); // 5 days ago
+      const metadata = createMetadata(10, recentDate, 1);
 
       const result = await analyzer.analyze(content, metadata);
 

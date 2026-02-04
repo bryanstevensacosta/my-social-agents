@@ -60,9 +60,6 @@ export class AggregateVersion extends ValueObject<AggregateVersionProps> {
   }
 }
 
-// Re-export ConcurrencyException for backward compatibility
-export { ConcurrencyException } from './concurrency-exception';
-
 /**
  * AggregateRoot<TId>
  *

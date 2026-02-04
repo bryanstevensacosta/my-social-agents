@@ -7,7 +7,7 @@
  * Requirements: 2.1, 2.2, 2.3, 2.4
  */
 
-import { AggregateRoot, AggregateVersion } from '../kernel';
+import { AggregateRoot, AggregateVersion } from '../../core';
 import { DomainEvent } from './event-store';
 
 /**

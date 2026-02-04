@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { ScheduleModule } from '../schedule.module';
-import { IJobScheduler } from '@/shared/kernel';
+import { IJobScheduler } from '@/shared/domain';
 
 describe('ScheduleModule', () => {
   let module: TestingModule;

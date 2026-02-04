@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ResilienceModule } from './infra/resilience/resilience.module';
 import { ScheduleModule } from './infra/scheduling/schedule.module';
-import { SharedExternalModule } from './infra/external/shared-external.module';
+import { SharedCryptoModule } from './infra/crypto/shared-crypto.module';
 
 /**
  * SharedModule
@@ -12,7 +12,7 @@ import { SharedExternalModule } from './infra/external/shared-external.module';
  * Includes:
  * - ResilienceModule: Retry (IRetryService) and Circuit Breaker (ICircuitBreaker) services
  * - ScheduleModule: Job scheduling infrastructure
- * - SharedExternalModule: Cryptographic hashing (IHashService) and encryption (ICredentialEncryption)
+ * - SharedCryptoModule: Cryptographic hashing (IHashing) and encryption (ICredentialEncryption)
  *
  * Note: Event publishing uses @nestjs/cqrs EventBus directly.
  *
@@ -29,7 +29,7 @@ import { SharedExternalModule } from './infra/external/shared-external.module';
  * by bounded contexts without needing to import individual modules.
  */
 @Module({
-  imports: [ResilienceModule, ScheduleModule, SharedExternalModule],
-  exports: [ResilienceModule, ScheduleModule, SharedExternalModule],
+  imports: [ResilienceModule, ScheduleModule, SharedCryptoModule],
+  exports: [ResilienceModule, ScheduleModule, SharedCryptoModule],
 })
 export class SharedModule {}

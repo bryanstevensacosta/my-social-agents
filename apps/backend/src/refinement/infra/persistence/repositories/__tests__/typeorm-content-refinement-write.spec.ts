@@ -6,7 +6,7 @@ import { ChunkHash } from '@refinement/domain/value-objects/chunk-hash';
 import { RefinementError } from '@refinement/domain/value-objects/refinement-error';
 import { ContentRefinementEntity } from '../../entities/content-refinement.entity';
 import { Repository } from 'typeorm';
-import { ConcurrencyException } from '@/shared/kernel/concurrency-exception';
+import { ConcurrencyException } from '@/shared/domain';
 
 describe('TypeOrmContentRefinementWriteRepository', () => {
   let repository: TypeOrmContentRefinementWriteRepository;

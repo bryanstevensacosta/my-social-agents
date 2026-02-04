@@ -4,8 +4,8 @@ import { DataSource, Repository } from 'typeorm';
 import * as fc from 'fast-check';
 import { PostgresEventStore } from '../postgres-event-store';
 import { DomainEventEntity } from '../entities/domain-event.entity';
-import { DomainEvent } from '@/shared/event-sourcing/event-store';
-import { ConcurrencyException } from '@/shared/kernel/concurrency-exception';
+import { DomainEvent } from '@/shared/domain/interfaces/event-sourcing/event-store';
+import { ConcurrencyException } from '@/shared/domain';
 
 /**
  * Property-Based Tests for PostgresEventStore - Optimistic Concurrency

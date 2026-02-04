@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IEncryptionKeyProvider } from '@/shared/interfaces';
+import { IEncryptionKeyProvider } from '@/shared/domain/interfaces/crypto';
 
 /**
  * EncryptionKeyProvider

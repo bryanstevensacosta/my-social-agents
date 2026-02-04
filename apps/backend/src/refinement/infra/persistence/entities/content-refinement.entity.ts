@@ -34,7 +34,6 @@ export class ContentRefinementEntity {
   id!: string;
 
   @Column('uuid')
-  @Index()
   contentItemId!: string;
 
   @Column('varchar', { length: 50 })

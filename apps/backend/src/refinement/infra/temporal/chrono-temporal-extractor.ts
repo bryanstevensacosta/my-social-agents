@@ -98,10 +98,18 @@ export class ChronoTemporalExtractor implements ITemporalExtractor {
     const rangeResult = parsedDates.find((result) => result.end !== null);
 
     if (rangeResult && rangeResult.end) {
-      return {
-        startDate: rangeResult.start.date(),
-        endDate: rangeResult.end.date(),
-      };
+      const start = rangeResult.start.date();
+      const end = rangeResult.end.date();
+
+      // Ensure start is before end
+      if (start.getTime() >= end.getTime()) {
+        this.logger.warn(
+          `Invalid temporal window: start (${start.toISOString()}) >= end (${end.toISOString()}). Skipping window.`,
+        );
+        return { startDate: null, endDate: null };
+      }
+
+      return { startDate: start, endDate: end };
     }
 
     // If multiple dates are mentioned, use first and last as window
@@ -109,10 +117,18 @@ export class ChronoTemporalExtractor implements ITemporalExtractor {
       const dates = parsedDates.map((result) => result.start.date());
       dates.sort((a, b) => a.getTime() - b.getTime());
 
-      return {
-        startDate: dates[0],
-        endDate: dates[dates.length - 1],
-      };
+      const start = dates[0];
+      const end = dates[dates.length - 1];
+
+      // Ensure start is before end (should always be true after sorting, but check anyway)
+      if (start.getTime() >= end.getTime()) {
+        this.logger.warn(
+          `Invalid temporal window after sorting: start (${start.toISOString()}) >= end (${end.toISOString()}). Skipping window.`,
+        );
+        return { startDate: null, endDate: null };
+      }
+
+      return { startDate: start, endDate: end };
     }
 
     // Single date, no window

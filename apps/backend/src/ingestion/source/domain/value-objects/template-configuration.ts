@@ -1,4 +1,4 @@
-import { ValueObject } from '@/shared/kernel/value-object';
+import { ValueObject } from '@/shared/domain/core/value-object';
 import { TemplateMetadata } from './template-metadata';
 
 /**

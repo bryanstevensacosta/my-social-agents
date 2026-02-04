@@ -36,7 +36,7 @@ describe('Full Pipeline Integration', () => {
       // - IRetryService
       // - ICircuitBreaker
       // - ICredentialEncryption
-      // - IHashService
+      // - IHashing
       // Note: Event publishing uses @nestjs/cqrs EventBus directly
       expect(true).toBe(true);
     });

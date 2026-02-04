@@ -1,5 +1,5 @@
 import { SourceType, SourceTypeEnum } from '../value-objects/source-type';
-import { AggregateRoot, AggregateVersion } from '@/shared/kernel';
+import { AggregateRoot, AggregateVersion } from '@/shared/domain';
 
 /**
  * SourceConfiguration Aggregate Root

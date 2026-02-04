@@ -8,7 +8,7 @@ import {
   ErrorRecord,
   ErrorType,
 } from '@/ingestion/job/domain/entities/error-record';
-import { AggregateRoot, AggregateVersion } from '@/shared/kernel';
+import { AggregateRoot, AggregateVersion } from '@/shared/domain';
 
 /**
  * IngestionJob Aggregate Root

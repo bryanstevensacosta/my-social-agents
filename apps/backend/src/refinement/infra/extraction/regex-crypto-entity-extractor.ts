@@ -109,8 +109,13 @@ export class RegexCryptoEntityExtractor implements IEntityExtractor {
     // 3. Extract full name patterns (Bitcoin, Ethereum)
     entities.push(...this.extractFullNames(content));
 
-    // 4. Deduplicate by position (keep highest confidence)
-    return Promise.resolve(this.deduplicateByPosition(entities));
+    // 4. Deduplicate by position (keep highest confidence for overlapping matches)
+    const positionDeduplicated = this.deduplicateByPosition(entities);
+
+    // 5. Deduplicate by symbol (keep highest confidence for same symbol)
+    const symbolDeduplicated = this.deduplicateBySymbol(positionDeduplicated);
+
+    return Promise.resolve(symbolDeduplicated);
   }
 
   /**
@@ -249,5 +254,23 @@ export class RegexCryptoEntityExtractor implements IEntityExtractor {
     }
 
     return deduplicated;
+  }
+
+  /**
+   * Deduplicates entities by symbol, keeping highest confidence
+   */
+  private deduplicateBySymbol(entities: CryptoEntity[]): CryptoEntity[] {
+    if (entities.length === 0) return [];
+
+    const symbolMap = new Map<string, CryptoEntity>();
+
+    for (const entity of entities) {
+      const existing = symbolMap.get(entity.value);
+      if (!existing || entity.confidence > existing.confidence) {
+        symbolMap.set(entity.value, entity);
+      }
+    }
+
+    return Array.from(symbolMap.values());
   }
 }

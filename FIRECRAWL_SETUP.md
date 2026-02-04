@@ -1,280 +1,147 @@
-# Firecrawl Local Development Setup
+# Firecrawl Setup
 
-This guide explains how to run Firecrawl locally for development with My Social Agents.
+Firecrawl is used as an external service for web scraping capabilities. It runs as a separate Docker stack.
 
-## Quick Start
+## Quick Setup
 
-### 1. Copy Environment File
+### 1. Clone Firecrawl Repository
 
 ```bash
-# Backend environment (includes Firecrawl configuration)
-cd apps/backend
-cp .env.example .env
+# Clone in a separate directory (outside this project)
+cd ~/projects  # or wherever you keep your projects
+git clone https://github.com/mendableai/firecrawl.git
+cd firecrawl
 ```
 
-### 2. Start All Services
+### 2. Start Firecrawl Services
 
 ```bash
-# From apps/backend directory
+# Start all Firecrawl services
 docker-compose up -d
 
-# Check service status
+# Verify services are running
 docker-compose ps
-```
 
-### 3. Verify Firecrawl is Running
-
-```bash
-# Run verification script (from project root)
-./scripts/verify-firecrawl.sh
-
-# Or manually check health
+# Check API health
 curl http://localhost:3002/health
 ```
 
-### 4. Test Scraping
+### 3. Configure Backend
+
+In `apps/backend/.env`:
+
+```env
+# Firecrawl Configuration
+FIRECRAWL_API_URL=http://localhost:3002
+FIRECRAWL_TIMEOUT=30000
+FIRECRAWL_MAX_RETRIES=3
+```
+
+### 4. Test Integration
 
 ```bash
-# Test basic scrape
+# Test scraping
 curl -X POST http://localhost:3002/v2/scrape \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
   -d '{"url": "https://example.com", "formats": ["markdown"]}'
 ```
 
-## Services Overview
+## Updating Firecrawl
 
-The `docker-compose.yml` starts the following services:
-
-| Service                | Port  | Description                   |
-| ---------------------- | ----- | ----------------------------- |
-| `postgres`             | 5433  | Backend PostgreSQL database   |
-| `pgadmin`              | 5050  | PostgreSQL admin UI           |
-| `firecrawl-api`        | 3002  | Firecrawl API server          |
-| `firecrawl-playwright` | -     | Browser automation (internal) |
-| `firecrawl-redis`      | -     | Job queue (internal)          |
-| `firecrawl-rabbitmq`   | 15672 | Message queue + Management UI |
-| `firecrawl-postgres`   | -     | Firecrawl database (internal) |
-
-## Accessing Services
-
-### Firecrawl API
-
-- **URL**: http://localhost:3002
-- **Health**: http://localhost:3002/health
-- **Admin Panel**: http://localhost:3002/admin/dev-admin-key/queues
-
-### Backend PostgreSQL
-
-- **Host**: localhost
-- **Port**: 5433
-- **User**: postgres
-- **Password**: postgres
-- **Database**: crypto_knowledge
-
-### pgAdmin
-
-- **URL**: http://localhost:5050
-- **Email**: admin@example.com
-- **Password**: admin
-
-### RabbitMQ Management
-
-- **URL**: http://localhost:15672
-- **User**: guest
-- **Password**: guest
-
-## Development Workflow
-
-### Start Services
+To update to the latest version:
 
 ```bash
-# From apps/backend directory
-cd apps/backend
+cd ~/projects/firecrawl
 
-# Start all services in background
-docker-compose up -d
+# Pull latest changes
+git pull origin main
 
-# Start with logs visible
-docker-compose up
-```
-
-### View Logs
-
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f firecrawl-api
-docker-compose logs -f postgres
-```
-
-### Stop Services
-
-```bash
-# Stop all services
+# Rebuild and restart
 docker-compose down
-
-# Stop and remove volumes (clean slate)
-docker-compose down -v
+docker-compose up -d --build
 ```
 
-### Restart Services
+## Architecture
 
-```bash
-# Restart all services
-docker-compose restart
-
-# Restart specific service
-docker-compose restart firecrawl-api
+```
+┌─────────────────────────────────────────┐
+│  My Social Agents Backend               │
+│  (apps/backend)                         │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │  FirecrawlAdapter               │   │
+│  │  (HTTP Client)                  │   │
+│  └──────────────┬──────────────────┘   │
+└─────────────────┼────────────────────────┘
+                  │ HTTP
+                  │ http://localhost:3002
+                  ▼
+┌─────────────────────────────────────────┐
+│  Firecrawl (Separate Repository)       │
+│  ~/projects/firecrawl                   │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │  Firecrawl API :3002            │   │
+│  │  Playwright Service :3000       │   │
+│  │  Redis :6379                    │   │
+│  │  RabbitMQ :5672                 │   │
+│  │  PostgreSQL :5432               │   │
+│  └─────────────────────────────────┘   │
+└─────────────────────────────────────────┘
 ```
 
-## Running the Backend
+## Benefits of Separate Repository
 
-Once Firecrawl is running, start the NestJS backend:
-
-```bash
-# From apps/backend directory
-cd apps/backend
-
-# Install dependencies (first time only)
-npm install
-
-# Start development server
-npm run start:dev
-```
-
-The backend will connect to Firecrawl at `http://localhost:3002`.
+1. **Simplicity**: No git submodule complexity
+2. **Easy Updates**: Simple `git pull` to update
+3. **Clean Separation**: Clear boundary between services
+4. **Independent Deployment**: Firecrawl can be deployed separately
+5. **No Build Overhead**: Use official Docker images
 
 ## Troubleshooting
 
-### Firecrawl API Not Starting
-
-**Check logs**:
+### Firecrawl API Not Accessible
 
 ```bash
-cd apps/backend
+# Check if services are running
+cd ~/projects/firecrawl
+docker-compose ps
+
+# Check logs
 docker-compose logs firecrawl-api
+
+# Restart services
+docker-compose restart
 ```
-
-**Common issues**:
-
-- Redis not ready: Wait for Redis health check to pass
-- PostgreSQL not ready: Wait for PostgreSQL health check to pass
-- Port conflict: Ensure port 3002 is not in use
 
 ### Port Conflicts
 
-If you get port conflicts, edit `apps/backend/.env`:
-
-1. **PostgreSQL (5433)**: Already configured to avoid conflicts
-2. **Firecrawl (3002)**: Change `FIRECRAWL_PORT=3002` to another port
-3. **pgAdmin (5050)**: Change port mapping in `docker-compose.yml`
-
-### Redis Connection Errors
-
-```bash
-# Check Redis is running
-cd apps/backend
-docker-compose ps firecrawl-redis
-
-# Test Redis connection
-docker-compose exec firecrawl-redis redis-cli ping
-```
-
-### Playwright Issues
-
-```bash
-# Check Playwright logs
-cd apps/backend
-docker-compose logs firecrawl-playwright
-
-# Restart Playwright service
-docker-compose restart firecrawl-playwright
-```
-
-### Database Connection Issues
-
-**Backend can't connect to PostgreSQL**:
-
-- Verify `DB_PORT=5433` in `apps/backend/.env`
-- Check PostgreSQL is running: `docker-compose ps postgres`
-
-**Firecrawl can't connect to its PostgreSQL**:
-
-- Check logs: `docker-compose logs firecrawl-postgres`
-- Verify credentials match in `.env`
-
-## Performance Tuning
-
-### Resource Limits
-
-Edit `apps/backend/docker-compose.yml` to adjust resource limits:
-
-```yaml
-services:
-  firecrawl-api:
-    deploy:
-      resources:
-        limits:
-          cpus: '4.0' # Adjust based on your system
-          memory: 8G # Adjust based on your system
-```
-
-### Concurrent Requests
-
-Edit `apps/backend/.env` to adjust concurrency:
+If port 3002 is already in use, modify Firecrawl's `.env`:
 
 ```env
-FIRECRAWL_NUM_WORKERS_PER_QUEUE=8
-FIRECRAWL_CRAWL_CONCURRENT_REQUESTS=10
-FIRECRAWL_MAX_CONCURRENT_JOBS=5
-FIRECRAWL_BROWSER_POOL_SIZE=5
+PORT=3003
 ```
 
-## Clean Up
+Then update backend `.env`:
 
-### Remove All Containers and Volumes
-
-```bash
-cd apps/backend
-
-# Stop and remove everything
-docker-compose down -v
-
-# Remove unused Docker resources
-docker system prune -a
+```env
+FIRECRAWL_API_URL=http://localhost:3003
 ```
 
-### Reset to Clean State
+## Alternative: Using Firecrawl Cloud
 
-```bash
-cd apps/backend
+Instead of self-hosting, you can use Firecrawl Cloud:
 
-# Stop services
-docker-compose down -v
+1. Sign up at https://firecrawl.dev
+2. Get your API key
+3. Update backend `.env`:
 
-# Remove environment file
-rm .env
-
-# Recreate from example
-cp .env.example .env
-
-# Start fresh
-docker-compose up -d
+```env
+FIRECRAWL_API_URL=https://api.firecrawl.dev
+FIRECRAWL_API_KEY=your-api-key-here
 ```
 
-## Next Steps
+## Related Files
 
-1. ✅ Firecrawl is running locally
-2. ✅ Backend can connect to Firecrawl
-3. 🔄 Implement Firecrawl adapter in backend (see Phase 3 of spec)
-4. 🔄 Test scraping functionality
-5. 🔄 Integrate with ingestion pipeline
-
-## Related Documentation
-
-- [Firecrawl Integration Spec](.kiro/specs/firecrawl-integration/)
-- [Firecrawl Steering](.kiro/steering/70-firecrawl-integration.md)
-- [Firecrawl Docker Setup](apps/firecrawl/.kiro/steering/20-docker-setup.md)
-- [Firecrawl Environment Config](apps/firecrawl/.kiro/steering/21-environment-configuration.md)
+- `apps/backend/src/ingestion/source/infra/adapters/firecrawl-adapter.ts` - Firecrawl integration
+- `apps/backend/.env.example` - Environment configuration

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { IHashService } from '@/shared/interfaces';
+import { IHashing } from '@/shared/domain/interfaces/crypto/hashing';
 
 /**
- * HashService
+ * Hashing
  *
- * Concrete implementation of IHashService interface using Node.js crypto module.
+ * Concrete implementation of IHashing interface using Node.js crypto module.
  * Provides SHA-256 hashing for content deduplication and integrity verification.
  *
  * This implementation is part of the shared kernel and can be used by any bounded
@@ -14,7 +14,7 @@ import { IHashService } from '@/shared/interfaces';
  * Requirements: Shared across multiple contexts for content hashing
  */
 @Injectable()
-export class HashService implements IHashService {
+export class Hashing implements IHashing {
   /**
    * Computes a SHA-256 hash using Node.js crypto
    */

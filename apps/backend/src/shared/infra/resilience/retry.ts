@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { IRetryService, RetryOptions, RetryResult } from '@/shared/interfaces';
+import {
+  IRetryService,
+  RetryOptions,
+  RetryResult,
+} from '@/shared/domain/interfaces/resilience';
 
 /**
  * RetryService

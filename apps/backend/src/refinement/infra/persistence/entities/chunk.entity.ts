@@ -23,7 +23,7 @@ import { ContentRefinementEntity } from './content-refinement.entity';
  * Indexes:
  * - refinement_id (for queries by refinement)
  * - hash (for duplicate detection)
- * - position (for ordering)
+ * - (refinement_id, position) composite (for ordering)
  */
 @Entity('chunks')
 @Index(['refinementId'])
@@ -34,7 +34,6 @@ export class ChunkEntity {
   id!: string;
 
   @Column('uuid')
-  @Index()
   refinementId!: string;
 
   @ManyToOne(() => ContentRefinementEntity, (refinement) => refinement.chunks, {
@@ -50,7 +49,6 @@ export class ChunkEntity {
   position!: number;
 
   @Column('varchar', { length: 64 })
-  @Index()
   hash!: string;
 
   @Column('jsonb', { nullable: true })
