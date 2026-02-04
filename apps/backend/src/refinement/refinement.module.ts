@@ -1,56 +1,61 @@
+// ===== Node Modules =====
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-// ===== Entities =====
-import { ContentRefinementEntity } from './infra/persistence/entities/content-refinement.entity';
-import { ChunkEntity } from './infra/persistence/entities/chunk.entity';
+// ===== Shared Modules =====
+import { SharedCryptoModule } from '@/shared/infra/crypto/shared-crypto.module';
 
-// ===== Command Handlers =====
-import { RefineContentCommandHandler } from './app/commands/refine-content/handler';
-import { RerefineContentCommandHandler } from './app/commands/rerefine-content/handler';
+// ===== Refinement Context - Infrastructure (Entities) =====
+import { ContentRefinementEntity } from '@refinement/infra/persistence/entities/content-refinement.entity';
+import { ChunkEntity } from '@refinement/infra/persistence/entities/chunk.entity';
 
-// ===== Query Handlers =====
-import { GetContentRefinementHandler } from './app/queries/get-content-refinement/handler';
-import { GetChunksByContentHandler } from './app/queries/get-chunks-by-content/handler';
+// ===== Refinement Context - Application (Command Handlers) =====
+import { RefineContentCommandHandler } from '@refinement/app/commands/refine-content/handler';
+import { RerefineContentCommandHandler } from '@refinement/app/commands/rerefine-content/handler';
 
-// ===== Event Handlers =====
-import { TriggerRefinementOnContentIngested } from './app/events/content-ingested/handler';
+// ===== Refinement Context - Application (Query Handlers) =====
+import { GetContentRefinementHandler } from '@refinement/app/queries/get-content-refinement/handler';
+import { GetChunksByContentHandler } from '@refinement/app/queries/get-chunks-by-content/handler';
 
-// ===== Domain Services =====
-import { SemanticChunker } from './domain/services/semantic-chunker';
-import { CryptoEntityExtractor } from './domain/services/crypto-entity-extractor';
-import { TemporalAnalyzer } from './domain/services/temporal-analyzer';
-import { ContentQualityAnalyzer as DomainContentQualityAnalyzer } from './domain/services/content-quality-analyzer';
-import { DuplicateDetector } from './domain/services/duplicate-detector';
+// ===== Refinement Context - Application (Event Handlers) =====
+import { TriggerRefinementOnContentIngested } from '@refinement/app/events/content-ingested/handler';
 
-// ===== Infrastructure - Repositories =====
-import { TypeOrmContentRefinementWriteRepository } from './infra/persistence/repositories/typeorm-content-refinement-write';
-import { ContentRefinementReadRepository } from './infra/persistence/repositories/content-refinement-read';
+// ===== Refinement Context - Domain (Services) =====
+import { SemanticChunker } from '@refinement/domain/services/semantic-chunker';
+import { ChunkHashGenerator } from '@refinement/domain/services/chunk-hash-generator';
+import { CryptoEntityExtractor } from '@refinement/domain/services/crypto-entity-extractor';
+import { TemporalAnalyzer } from '@refinement/domain/services/temporal-analyzer';
+import { ContentQualityAnalyzer as DomainContentQualityAnalyzer } from '@refinement/domain/services/content-quality-analyzer';
+import { DuplicateDetector } from '@refinement/domain/services/duplicate-detector';
 
-// ===== Infrastructure - Factories =====
-import { TypeOrmContentRefinementFactory } from './infra/persistence/factories/typeorm-content-refinement-factory';
+// ===== Refinement Context - Infrastructure (Repositories) =====
+import { TypeOrmContentRefinementWriteRepository } from '@refinement/infra/persistence/repositories/typeorm-content-refinement-write';
+import { ContentRefinementReadRepository } from '@refinement/infra/persistence/repositories/content-refinement-read';
 
-// ===== Infrastructure - Chunking Strategies =====
+// ===== Refinement Context - Infrastructure (Factories) =====
+import { TypeOrmContentRefinementFactory } from '@refinement/infra/persistence/factories/typeorm-content-refinement-factory';
+
+// ===== Refinement Context - Infrastructure (Chunking Strategies) =====
 import {
   LangChainRecursiveChunker,
   LangChainMarkdownChunker,
   LangChainCodeChunker,
-} from './infra/chunking';
+} from '@refinement/infra/chunking';
 
-// ===== Infrastructure - Entity Extraction =====
+// ===== Refinement Context - Infrastructure (Entity Extraction) =====
 import {
   RegexCryptoEntityExtractor,
   LLMCryptoEntityExtractor,
   HybridCryptoEntityExtractor,
-} from './infra/extraction';
+} from '@refinement/infra/extraction';
 
-// ===== Infrastructure - Temporal Analysis =====
-import { ChronoTemporalExtractor } from './infra/temporal';
+// ===== Refinement Context - Infrastructure (Temporal Analysis) =====
+import { ChronoTemporalExtractor } from '@refinement/infra/temporal';
 
-// ===== Infrastructure - Quality Analysis =====
-import { ContentQualityAnalyzer as InfraContentQualityAnalyzer } from './infra/quality';
+// ===== Refinement Context - Infrastructure (Quality Analysis) =====
+import { ContentQualityAnalyzer as InfraContentQualityAnalyzer } from '@refinement/infra/quality';
 
 /**
  * RefinementModule
@@ -86,6 +91,12 @@ import { ContentQualityAnalyzer as InfraContentQualityAnalyzer } from './infra/q
     // CQRS module for command/query/event handling
     CqrsModule,
 
+    // Config module for environment variables
+    ConfigModule,
+
+    // Shared crypto module for hashing services
+    SharedCryptoModule,
+
     // TypeORM entities for persistence
     TypeOrmModule.forFeature([ContentRefinementEntity, ChunkEntity]),
   ],
@@ -120,6 +131,9 @@ import { ContentQualityAnalyzer as InfraContentQualityAnalyzer } from './infra/q
     // ===== Domain Services =====
     // SemanticChunker (orchestrates chunking strategy)
     SemanticChunker,
+
+    // ChunkHashGenerator (generates chunk hashes)
+    ChunkHashGenerator,
 
     // CryptoEntityExtractor (orchestrates hybrid extraction)
     {
@@ -244,7 +258,7 @@ import { ContentQualityAnalyzer as InfraContentQualityAnalyzer } from './infra/q
     'IContentRefinementReadRepository',
 
     // Export domain services for cross-context usage
-    'ISemanticChunker',
+    SemanticChunker, // Concrete class, not interface
     'CryptoEntityExtractor',
     'ITemporalAnalyzer',
     'IContentQualityAnalyzer',

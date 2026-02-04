@@ -88,7 +88,7 @@ describe('ContentRefinementReadRepository', () => {
   });
 
   describe('findByContentItemId', () => {
-    it('should find refinement by content item ID', async () => {
+    it('should find refinements by content item ID', async () => {
       const entity = new ContentRefinementEntity();
       entity.id = 'ref-1';
       entity.contentItemId = 'content-1';
@@ -106,7 +106,7 @@ describe('ContentRefinementReadRepository', () => {
       entity.createdAt = new Date();
       entity.updatedAt = new Date();
 
-      mockTypeOrmRepo.findOne.mockResolvedValue(entity);
+      mockTypeOrmRepo.find.mockResolvedValue([entity]);
 
       const result = await repository.findByContentItemId('content-1');
 
@@ -115,12 +115,12 @@ describe('ContentRefinementReadRepository', () => {
       expect(result[0]?.contentItemId).toBe('content-1');
     });
 
-    it('should return null when not found', async () => {
-      mockTypeOrmRepo.findOne.mockResolvedValue(null);
+    it('should return empty array when not found', async () => {
+      mockTypeOrmRepo.find.mockResolvedValue([]);
 
       const result = await repository.findByContentItemId('non-existent');
 
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
   });
 
@@ -307,7 +307,7 @@ describe('ContentRefinementReadRepository', () => {
     });
 
     it('should handle database errors in findByContentItemId', async () => {
-      mockTypeOrmRepo.findOne.mockRejectedValue(new Error('Database error'));
+      mockTypeOrmRepo.find.mockRejectedValue(new Error('Database error'));
 
       await expect(repository.findByContentItemId('content-1')).rejects.toThrow(
         'Database error',

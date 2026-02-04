@@ -6,6 +6,7 @@ import { GetContentRefinementQuery } from '../app/queries/get-content-refinement
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ContentRefinementEntity } from '../infra/persistence/entities/content-refinement.entity';
 import { ChunkEntity } from '../infra/persistence/entities/chunk.entity';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('Refinement Integration Tests', () => {
   let module: TestingModule;
@@ -30,6 +31,9 @@ describe('Refinement Integration Tests', () => {
       ],
     }).compile();
 
+    // Initialize the module to trigger CQRS handler registration
+    await module.init();
+
     commandBus = module.get<CommandBus>(CommandBus);
     queryBus = module.get<QueryBus>(QueryBus);
   });
@@ -40,8 +44,8 @@ describe('Refinement Integration Tests', () => {
 
   describe('End-to-end refinement flow', () => {
     it('should refine content and persist to database', async () => {
-      // Arrange
-      const contentItemId = 'content-integration-1';
+      // Arrange - Use proper UUID
+      const contentItemId = uuidv4();
 
       // Act - Execute refinement command (only takes contentItemId, config is optional)
       const command = new RefineContentCommand(contentItemId);
@@ -75,8 +79,8 @@ describe('Refinement Integration Tests', () => {
     }, 30000); // 30s timeout for integration test
 
     it('should extract crypto entities from content', async () => {
-      // Arrange
-      const contentItemId = 'content-integration-2';
+      // Arrange - Use proper UUID
+      const contentItemId = uuidv4();
 
       // Act
       const command = new RefineContentCommand(contentItemId);
@@ -103,8 +107,8 @@ describe('Refinement Integration Tests', () => {
     }, 30000);
 
     it('should extract temporal contexts from content', async () => {
-      // Arrange
-      const contentItemId = 'content-integration-3';
+      // Arrange - Use proper UUID
+      const contentItemId = uuidv4();
 
       // Act
       const command = new RefineContentCommand(contentItemId);
@@ -126,8 +130,8 @@ describe('Refinement Integration Tests', () => {
     }, 30000);
 
     it('should calculate quality scores for chunks', async () => {
-      // Arrange
-      const contentItemId = 'content-integration-4';
+      // Arrange - Use proper UUID
+      const contentItemId = uuidv4();
 
       // Act
       const command = new RefineContentCommand(contentItemId);
@@ -168,8 +172,7 @@ describe('Refinement Integration Tests', () => {
     it('should have all providers registered', () => {
       // Verify key providers are available
       const providers = [
-        'ISemanticChunker',
-        'ICryptoEntityExtractor',
+        'CryptoEntityExtractor',
         'ITemporalAnalyzer',
         'IContentQualityAnalyzer',
         'IContentRefinementWriteRepository',
@@ -185,8 +188,8 @@ describe('Refinement Integration Tests', () => {
 
   describe('LangChain integration', () => {
     it('should use LangChain for chunking', async () => {
-      // Arrange
-      const contentItemId = 'content-langchain-1';
+      // Arrange - Use proper UUID
+      const contentItemId = uuidv4();
 
       // Act
       const command = new RefineContentCommand(contentItemId);
@@ -208,8 +211,8 @@ describe('Refinement Integration Tests', () => {
 
   describe('Chrono-node integration', () => {
     it('should use Chrono for temporal extraction', async () => {
-      // Arrange
-      const contentItemId = 'content-chrono-1';
+      // Arrange - Use proper UUID
+      const contentItemId = uuidv4();
 
       // Act
       const command = new RefineContentCommand(contentItemId);
@@ -237,7 +240,8 @@ describe('Refinement Integration Tests', () => {
       // The actual strategy selection is done via environment variables
       // which are set in the module configuration
 
-      const contentItemId = 'content-factory-1';
+      // Use proper UUID
+      const contentItemId = uuidv4();
 
       const command = new RefineContentCommand(contentItemId);
 
