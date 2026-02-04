@@ -119,10 +119,7 @@ import { ContentQualityAnalyzer as InfraContentQualityAnalyzer } from './infra/q
 
     // ===== Domain Services =====
     // SemanticChunker (orchestrates chunking strategy)
-    {
-      provide: 'ISemanticChunker',
-      useClass: SemanticChunker,
-    },
+    SemanticChunker,
 
     // CryptoEntityExtractor (orchestrates hybrid extraction)
     {
