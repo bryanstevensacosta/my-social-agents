@@ -167,14 +167,18 @@ export class TypeOrmContentRefinementFactory implements IContentRefinementFactor
           }
 
           // CryptoEntity.create() takes 5 args: type, value, confidence, startPos, endPos
-          // Database doesn't store positions, so use symbol length as reasonable default
-          const symbolLength = e.symbol.length;
+          // Database doesn't store positions, so we need to find the symbol in the chunk content
+          const symbolIndex = entity.content.indexOf(e.symbol);
+          const startPos = symbolIndex >= 0 ? symbolIndex : 0;
+          const endPos =
+            symbolIndex >= 0 ? symbolIndex + e.symbol.length : e.symbol.length;
+
           return CryptoEntity.create(
             entityType,
             e.symbol,
             e.confidence,
-            0,
-            symbolLength,
+            startPos,
+            endPos,
           );
         })
       : [];

@@ -47,18 +47,22 @@ describe('TypeOrmContentRefinementWriteRepository', () => {
 
       const existingEntity = new ContentRefinementEntity();
       existingEntity.id = 'ref-1';
-      existingEntity.version = 0; // Database has previous version (before start())
+      existingEntity.version = 0; // Database has version 0 (before start())
 
       const savedEntity = new ContentRefinementEntity();
       savedEntity.id = 'ref-1';
-      savedEntity.version = 1; // After save
+      savedEntity.version = 1; // After save, version increments to 1
 
+      // Mock findOne to return entity with version 0
       mockTypeOrmRepo.findOne.mockResolvedValue(existingEntity);
       mockTypeOrmRepo.save.mockResolvedValue(savedEntity);
 
       await repository.save(aggregate);
 
       expect(mockTypeOrmRepo.save).toHaveBeenCalled();
+      expect(mockTypeOrmRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 'ref-1' },
+      });
     });
 
     it('should handle optimistic locking', async () => {
